@@ -19,7 +19,6 @@ objects:
             name: devcluster
             run: devcluster
         spec:
-          serviceAccountName: devcluster
           containers:
             - name: devcluster
               image: ${IMAGE}

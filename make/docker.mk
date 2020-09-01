@@ -15,6 +15,17 @@ docker-image: build
 docker-image-dev: build
 	$(Q)docker build -f build/Dockerfile -t ${IMAGE_DEV} .
 
+
+.PHONY: docker-push-dev
+## Push the docker dev image to quay.io registry
+docker-push-dev: docker-image
+ifeq ($(QUAY_NAMESPACE),${GO_PACKAGE_ORG_NAME})
+	@echo "#################################################### WARNING ####################################################"
+	@echo you are going to push to $(QUAY_NAMESPACE) namespace, make sure you have set QUAY_NAMESPACE variable appropriately
+	@echo "#################################################################################################################"
+endif
+	$(Q)docker push ${IMAGE_DEV}
+
 .PHONY: docker-push
 ## Push the docker image to quay.io registry
 docker-push: docker-image

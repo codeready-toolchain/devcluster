@@ -47,7 +47,7 @@ deploy-on-minishift: login-as-admin create-namespace build docker-image-dev
 
 .PHONY: deploy-dev
 ## Deploy DevCluster on dev environment
-deploy-dev: create-namespace build docker-image-dev
+deploy-dev: create-namespace build docker-image-dev docker-push-dev
 	$(Q)oc process -f ./deploy/devcluster.yaml \
         -p IMAGE=${IMAGE_DEV} \
         -p ENVIRONMENT=dev \
