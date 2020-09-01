@@ -5,7 +5,7 @@ ETC_HOSTS=/etc/hosts
 
 # to watch all namespaces, keep namespace empty
 APP_NAMESPACE ?= $(LOCAL_TEST_NAMESPACE)
-LOCAL_TEST_NAMESPACE ?= "toolchain-host-operator"
+LOCAL_TEST_NAMESPACE ?= "devcluster"
 
 .PHONY: login-as-admin
 ## Log in as system:admin
@@ -38,15 +38,11 @@ clean-namespace:
 reset-namespace: login-as-admin clean-namespace create-namespace
 
 .PHONY: deploy-dev
-## Deploy Registration service on minishift
+## Deploy DevCluster service on minishift
 deploy-dev: login-as-admin create-namespace build docker-image-dev
-	$(Q)oc process -f ./deploy/registration-service.yaml \
+	$(Q)oc process -f ./deploy/devcluster.yaml \
         -p IMAGE=${IMAGE_DEV} \
         -p ENVIRONMENT=dev \
         -p NAMESPACE=${LOCAL_TEST_NAMESPACE} \
         | oc apply -f -
 
-.PHONY: deploy-e2e
-deploy-e2e: get-e2e-repo
-## Deploy the e2e resources with the local 'registration-service' repository only
-	$(MAKE) -C ${E2E_REPO_PATH} dev-deploy-e2e REG_REPO_PATH=${PWD}

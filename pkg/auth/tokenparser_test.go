@@ -25,7 +25,7 @@ func TestRunTokenParserSuite(t *testing.T) {
 }
 
 func (s *TestTokenParserSuite) TestTokenParser() {
-	configRegistry := configuration.CreateEmptyRegistry()
+	config := configuration.New()
 
 	// create test keys
 	tokengenerator := authsupport.NewTokenManager()
@@ -40,14 +40,14 @@ func (s *TestTokenParserSuite) TestTokenParser() {
 	keysEndpointURL := tokengenerator.NewKeyServer().URL
 
 	// set the config for testing mode, the handler may use this.
-	configRegistry.GetViperInstance().Set("environment", configuration.UnitTestsEnvironment)
-	assert.True(s.T(), configRegistry.IsTestingMode(), "testing mode not set correctly to true")
+	config.GetViperInstance().Set("environment", configuration.UnitTestsEnvironment)
+	assert.True(s.T(), config.IsTestingMode(), "testing mode not set correctly to true")
 	// set the key service url in the config
-	configRegistry.GetViperInstance().Set("auth_client.public_keys_url", keysEndpointURL)
-	assert.Equal(s.T(), keysEndpointURL, configRegistry.GetAuthClientPublicKeysURL(), "key url not set correctly")
+	config.GetViperInstance().Set("auth_client.public_keys_url", keysEndpointURL)
+	assert.Equal(s.T(), keysEndpointURL, config.GetAuthClientPublicKeysURL(), "key url not set correctly")
 
 	// create KeyManager instance.
-	keyManager, err := auth.NewKeyManager(configRegistry)
+	keyManager, err := auth.NewKeyManager(config)
 	require.NoError(s.T(), err)
 
 	// create TokenParser instance.

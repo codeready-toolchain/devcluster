@@ -12,18 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegistrationServer bundles configuration, and HTTP server objects in a single
+// DevClusterServer bundles configuration, and HTTP server objects in a single
 // location.
-type RegistrationServer struct {
-	config      *configuration.Registry
+type DevClusterServer struct {
+	config      *configuration.Config
 	router      *gin.Engine
 	httpServer  *http.Server
 	routesSetup sync.Once
 }
 
-// New creates a new RegistrationServer object with reasonable defaults.
-func New(config *configuration.Registry) *RegistrationServer {
-	srv := &RegistrationServer{
+// New creates a new DevClusterServer object with reasonable defaults.
+func New(config *configuration.Config) *DevClusterServer {
+	srv := &DevClusterServer{
 		router: gin.Default(),
 	}
 	gin.DefaultWriter = io.MultiWriter(os.Stdout)
@@ -45,17 +45,17 @@ func New(config *configuration.Registry) *RegistrationServer {
 }
 
 // Config returns the app server's config object.
-func (srv *RegistrationServer) Config() *configuration.Registry {
+func (srv *DevClusterServer) Config() *configuration.Config {
 	return srv.config
 }
 
 // HTTPServer returns the app server's HTTP server.
-func (srv *RegistrationServer) HTTPServer() *http.Server {
+func (srv *DevClusterServer) HTTPServer() *http.Server {
 	return srv.httpServer
 }
 
 // Engine returns the app server's HTTP router.
-func (srv *RegistrationServer) Engine() *gin.Engine {
+func (srv *DevClusterServer) Engine() *gin.Engine {
 	return srv.router
 }
 
@@ -63,7 +63,7 @@ func (srv *RegistrationServer) Engine() *gin.Engine {
 // methods, paths, queries and names. It is a good idea to print this
 // information on server start to give you an idea of what routes are
 // available in the system.
-func (srv *RegistrationServer) GetRegisteredRoutes() string {
+func (srv *DevClusterServer) GetRegisteredRoutes() string {
 	var sb strings.Builder
 
 	for _, routeInfo := range srv.router.Routes() {

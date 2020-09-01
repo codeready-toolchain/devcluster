@@ -7,7 +7,7 @@ tmp/
 *.key
 *.crt
 pkg/static/generated_assets.go
-registration-service
+devcluster
 *.key
 *.crt
 

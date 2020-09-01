@@ -11,40 +11,17 @@ import (
 	"github.com/alexeykazakov/devcluster/pkg/configuration"
 	"github.com/alexeykazakov/devcluster/pkg/log"
 	"github.com/alexeykazakov/devcluster/pkg/server"
-	"github.com/spf13/pflag"
 )
 
 func main() {
 	// create logger and registry
 	log.Init("devcluster-service")
 
-	// Parse flags
-	var configFilePath string
-	pflag.StringVar(&configFilePath, "config", "", "path to the config file to read (if none is given, defaults will be used)")
-	pflag.Parse()
-
-	// Override default -config switch with environment variable only if -config
-	// switch was not explicitly given via the command line.
-	configSwitchIsSet := false
-	pflag.Visit(func(f *pflag.Flag) {
-		if f.Name == "config" {
-			configSwitchIsSet = true
-		}
-	})
-	if !configSwitchIsSet {
-		if envConfigPath, ok := os.LookupEnv(configuration.EnvPrefix + "_CONFIG_FILE_PATH"); ok {
-			configFilePath = envConfigPath
-		}
-	}
-
-	config, err := configuration.New(configFilePath)
-	if err != nil {
-		panic(err.Error())
-	}
+	config := configuration.New()
 
 	srv := server.New(config)
 
-	err = srv.SetupRoutes()
+	err := srv.SetupRoutes()
 	if err != nil {
 		panic(err.Error())
 	}

@@ -1,21 +1,21 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: registration-service
+  name: devcluster
 objects:
   - apiVersion: v1
     kind: ServiceAccount
     metadata:
       labels:
         provider: codeready-toolchain
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
   - kind: Role
     apiVersion: rbac.authorization.k8s.io/v1
     metadata:
       labels:
         provider: codeready-toolchain
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
     rules:
     - apiGroups:
@@ -43,41 +43,41 @@ objects:
     metadata:
       labels:
         provider: codeready-toolchain
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
     subjects:
     - kind: ServiceAccount
-      name: registration-service
+      name: devcluster
     roleRef:
       kind: Role
-      name: registration-service
+      name: devcluster
       apiGroup: rbac.authorization.k8s.io
   - kind: Deployment
     apiVersion: apps/v1
     metadata:
       labels:
         provider: codeready-toolchain
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
     spec:
       replicas: ${{REPLICAS}}
       selector:
         matchLabels:
-          name: registration-service
+          name: devcluster
       template:
         metadata:
           labels:
-            name: registration-service
-            run: registration-service
+            name: devcluster
+            run: devcluster
         spec:
-          serviceAccountName: registration-service
+          serviceAccountName: devcluster
           containers:
-            - name: registration-service
+            - name: devcluster
               image: ${IMAGE}
               ports:
                 - containerPort: 8080
               command:
-                - registration-service
+                - devcluster
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -107,31 +107,31 @@ objects:
                 - name: REGISTRATION_ENVIRONMENT
                   valueFrom:
                     configMapKeyRef:
-                      name: registration-service
+                      name: devcluster
                       key: environment
                 - name: REGISTRATION_AUTH_CLIENT_LIBRARY_URL
                   valueFrom:
                     configMapKeyRef:
-                      name: registration-service
+                      name: devcluster
                       key: auth_client.library_url
                 - name: REGISTRATION_AUTH_CLIENT_CONFIG_RAW
                   valueFrom:
                     configMapKeyRef:
-                      name: registration-service
+                      name: devcluster
                       key: auth_client.config_raw
                 - name: REGISTRATION_AUTH_CLIENT_PUBLIC_KEYS_URL
                   valueFrom:
                     configMapKeyRef:
-                      name: registration-service
+                      name: devcluster
                       key: auth_client.public_keys_url
   - kind: Service
     apiVersion: v1
     metadata:
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
       labels:
         provider: codeready-toolchain
-        run: registration-service
+        run: devcluster
     spec:
       ports:
         - name: "8080"
@@ -139,7 +139,7 @@ objects:
           port: 80
           targetPort: 8080
       selector:
-        run: registration-service
+        run: devcluster
       type: ClusterIP
       sessionAffinity: null
   - kind: Route
@@ -147,8 +147,8 @@ objects:
     metadata:
       labels:
         provider: codeready-toolchain
-        run: registration-service
-      name: registration-service
+        run: devcluster
+      name: devcluster
       namespace: ${NAMESPACE}
     spec:
       host: ''
@@ -156,7 +156,7 @@ objects:
         targetPort: "8080"
       to:
         kind: Service
-        name: registration-service
+        name: devcluster
         weight: 100
       tls:
         termination: edge
@@ -166,7 +166,7 @@ objects:
     metadata:
       labels:
         provider: codeready-toolchain
-      name: registration-service
+      name: devcluster
       namespace: ${NAMESPACE}
     type: Opaque
     data:
@@ -176,11 +176,11 @@ objects:
       auth_client.public_keys_url: ${AUTH_CLIENT_PUBLIC_KEYS_URL}
 parameters:
   - name: NAMESPACE
-    value: 'toolchain-host-operator'
+    value: 'devcluster'
   - name: IMAGE
-    value: quay.io/openshiftio/codeready-toolchain/registration-service:latest
+    value: quay.io/alexeykazakov/devcluster:latest
   - name: REPLICAS
-    value: '3'
+    value: '1'
   - name: ENVIRONMENT
     value: 'prod' # prod, stage, e2e-tests, dev, etc
   - name: AUTH_CLIENT_LIBRARY_URL

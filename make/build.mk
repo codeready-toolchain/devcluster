@@ -17,27 +17,17 @@ build-dev:
 	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
 		go build ${V_FLAG} ${LDFLAGS} \
 		-tags dev \
-		-o $(OUT_DIR)/bin/registration-service \
+		-o $(OUT_DIR)/bin/devcluster \
 		cmd/main.go
 
 # builds the production binary with bundled assets
 ## builds production binary
-build-prod: generate check-template-changes
+build-prod: generate
 	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
 		go build ${V_FLAG} ${LDFLAGS} \
-		-o $(OUT_DIR)/bin/registration-service \
+		-o $(OUT_DIR)/bin/devcluster \
 		cmd/main.go
 
 .PHONY: vendor
 vendor:
 	$(Q)go mod vendor
-
-.PHONY: check-template-changes
-check-template-changes:
-ifneq ($(shell git status -s | grep deploy/registration-service.yaml),)
-	@echo "#########################################################################"
-	@echo "## WARNING: The file deploy/registration-service.yaml has been changed ##"
-	@echo "##          Don't forget to reflect the change in host-operator repo   ##"
-	@echo "##          Run 'make copy-reg-service-template' and send PR         ##"
-	@echo "#########################################################################"
-endif

@@ -8,7 +8,6 @@ import (
 	"github.com/alexeykazakov/devcluster/pkg/controller"
 	"github.com/alexeykazakov/devcluster/pkg/log"
 	"github.com/alexeykazakov/devcluster/pkg/middleware"
-	"github.com/alexeykazakov/devcluster/pkg/signup"
 	"github.com/alexeykazakov/devcluster/pkg/static"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +49,7 @@ func (h StaticHandler) ServeHTTP(ctx *gin.Context) {
 }
 
 // SetupRoutes registers handlers for various URL paths.
-func (srv *RegistrationServer) SetupRoutes() error {
+func (srv *DevClusterServer) SetupRoutes() error {
 
 	var err error
 	srv.routesSetup.Do(func() {
@@ -65,21 +64,8 @@ func (srv *RegistrationServer) SetupRoutes() error {
 		// creating the controllers
 		healthCheckCtrl := controller.NewHealthCheck(srv.Config(), controller.NewHealthChecker(srv.Config()))
 		authConfigCtrl := controller.NewAuthConfig(srv.Config())
-		var signupSrv signup.Service
 
-		if srv.Config().IsTestingMode() {
-			// testing mode, return default impl instance. This is needed for tests
-			// which require a full server initialization. Such as server and middleware tests.
-			// Otherwise the K8s go client initialization fails during service creation if run in test environment.
-			signupSrv = &signup.ServiceImpl{}
-		} else {
-			signupSrv, err = signup.NewSignupService(srv.Config())
-			if err != nil {
-				err = errs.Wrapf(err, "failed to init signup service")
-				return
-			}
-		}
-		signupCtrl := controller.NewSignup(srv.Config(), signupSrv)
+		clusterReqCtrl := controller.NewClusterRequest(srv.Config())
 
 		// create the auth middleware
 		var authMiddleware *middleware.JWTMiddleware
@@ -97,8 +83,8 @@ func (srv *RegistrationServer) SetupRoutes() error {
 		// secured routes
 		securedV1 := srv.router.Group("/api/v1")
 		securedV1.Use(authMiddleware.HandlerFunc())
-		securedV1.POST("/signup", signupCtrl.PostHandler)
-		securedV1.GET("/signup", signupCtrl.GetHandler)
+		securedV1.POST("/cluster-req", clusterReqCtrl.PostHandler)
+		//securedV1.GET("/cluster-reqs", signupCtrl.GetHandler)
 
 		// if we are in testing mode, we also add a secured health route for testing
 		if srv.Config().IsTestingMode() {

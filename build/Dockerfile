@@ -3,18 +3,18 @@ FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
 LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Devtools <devtools@redhat.com>"
 
-ENV REG_SERVICE=/usr/local/bin/registration-service \
+ENV REG_SERVICE=/usr/local/bin/devcluster \
     USER_UID=1001 \
-    USER_NAME=registration-service \
+    USER_NAME=devcluster \
     LANG=en_US.utf8
 
-# install registration-service binary
-COPY build/_output/bin/registration-service ${REG_SERVICE}
+# install devcluster binary
+COPY build/_output/bin/devcluster ${REG_SERVICE}
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
-ENTRYPOINT ["/usr/local/bin/registration-service"]
+ENTRYPOINT ["/usr/local/bin/devcluster"]
 
 EXPOSE 8080
 
