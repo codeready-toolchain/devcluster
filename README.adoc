@@ -1,0 +1,98 @@
+= Registration Service
+
+image:https://goreportcard.com/badge/github.com/codeready-toolchain/registration-service[Go Report Card, link="https://goreportcard.com/report/github.com/codeready-toolchain/registration-service"]
+image:https://godoc.org/github.com/codeready-toolchain/registration-service?status.png[GoDoc,link="https://godoc.org/github.com/codeready-toolchain/registration-service"]
+image:https://codecov.io/gh/codeready-toolchain/registration-service/branch/master/graph/badge.svg[Codecov.io,link="https://codecov.io/gh/codeready-toolchain/registration-service"]
+
+This is the CodeReady Toolchain Registration Service repository. It implements the registration flow for the Toolchain SaaS.
+
+== Build
+
+Requires Go version 1.13 - download for your development environment https://golang.org/dl/[here].
+
+This repository uses https://github.com/golang/go/wiki/Modules[Go modules]. You may need to `export GO111MODULE=on` to turn modules support "on".
+
+To build, execute:
+
+```
+make build
+```
+
+This builds the executable with bundled assets. Only the binary needs to be deployed, all static assets are bundled with the binary.
+
+To just generate the asset bundle, execute:
+
+```
+make generate
+```
+
+This creates the asset bundle in the `static` package. Do not change the asset bundle file(s), changes will be lost on the next build.
+
+== Development
+
+To make development on the static content easier, a development binary can be built using:
+
+```
+make build-dev
+```
+
+The resulting binare *does not use bundled assets* but reads static content directly from `pkg/assets`. *Do not deploy the dev binary*. 
+
+
+
+=== Tests
+
+Tests are run by executing:
+
+```
+make test
+```
+
+Tests are run with bundled assets, see above.
+
+=== VSCode Testing/Debugging
+
+To use the internal test runner and debug features of VSCode, you need to make sure that VSCode runs in a context where Go Modules are enabled. To do this, run:
+
+```
+export GO111MODULE=on
+```
+
+Before running VSCode from that shell.
+
+=== Deploying on minishift without operators
+
+To deploy Registration Service only (no operator deployed) on local minishift, start your minishift then run:
+
+```bash
+eval $(minishift docker-env)
+make deploy-dev
+```
+
+The service can be accessed via the corresponding route:
+```bash
+$ oc get routes registration-service
+
+NAME                   HOST/PORT                                                            PATH      SERVICES               PORT      TERMINATION   WILDCARD
+registration-service   registration-service-toolchain-host-operator.192.168.42.237.nip.io             registration-service   8080                    None
+```
+
+You can now open the URL from HOST/PORT in your browser:
+
+http://registration-service-toolchain-host-operator.192.168.42.237.nip.io
+
+_Note_: the actual route/URL will be different in your minishift.
+
+=== Deploying all operators and Registration Service
+
+All e2e resources such as Host operator, Member operator, Registration Service, CRDs, etc can be deployed via:
+
+```
+make deploy-e2e
+```
+
+Host and member operators will be downloaded from the `master` branch and the local `registration-service` repo will be used to deploy the Registration Service.
+
+By default this target deploys resources to `toolchain-host-operator` and `toolchain-member-operator` namespaces.
+
+NOTE: If running in Minishift `eval $(minishift docker-env)` and `eval $(minishift oc-env)` are required. If running in CodeReady Containers `eval $(crc oc-env)` is required.
