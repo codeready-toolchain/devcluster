@@ -59,13 +59,38 @@ export GO111MODULE=on
 
 Before running VSCode from that shell.
 
-=== Deploying on minishift without operators
+=== Deploying on OpenShift
+
+To deploy the service on OpenShift you need to have OpenShift cluster running and access to a docker registry.
+Before running any make target, make sure you have `QUAY_NAMESPACE` variable set to your quay username (or set to any namespace you want to push the image to).
+
+```bash
+$ export QUAY_NAMESPACE=<quay-username>
+```
+
+Set the target namespace:
+```bash
+$ export NAMESPACE=<Namespace-to-be-used-to-deploy-devcluster>
+```
+
+Then:
+
+* Make sure the target OpenShift cluster is accessible via `oc` command.
+* Log in to the target OpenShift cluster with with a user who has edit permissions in `$NAMESPACE` or has permissions to create `$NAMESPACE`
+* Login to quay.io via `docker login quay.io` (in case you want to use quay as the docker registry)
+
+Then run:
+```bash
+make deploy-dev
+```
+
+=== Deploying on minishift
 
 To deploy DevCluster Service on local minishift, start your minishift then run:
 
 ```bash
 eval $(minishift docker-env)
-make deploy-dev
+make deploy-on-minishift
 ```
 
 The service can be accessed via the corresponding route:

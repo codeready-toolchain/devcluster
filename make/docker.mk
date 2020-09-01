@@ -13,7 +13,7 @@ docker-image: build
 .PHONY: docker-image-dev
 ## Build the docker image locally that can be deployed to dev environment
 docker-image-dev: build
-	$(Q)docker build -f build/Dockerfile -t ${IMAGE_DEV}
+	$(Q)docker build -f build/Dockerfile -t ${IMAGE_DEV} .
 
 .PHONY: docker-push
 ## Push the docker image to quay.io registry

@@ -3,9 +3,8 @@ MINISHIFT_HOSTNAME=minishift.local
 MINISHIFT_HOSTNAME_REGEX='minishift\.local'
 ETC_HOSTS=/etc/hosts
 
-# to watch all namespaces, keep namespace empty
-APP_NAMESPACE ?= $(LOCAL_TEST_NAMESPACE)
-LOCAL_TEST_NAMESPACE ?= "devcluster"
+APP_NAMESPACE ?= $(NAMESPACE)
+NAMESPACE ?= "devcluster"
 
 .PHONY: login-as-admin
 ## Log in as system:admin
@@ -17,32 +16,40 @@ login-as-admin:
 ## Create the test namespace
 create-namespace:
 	$(Q)-echo "Creating Namespace"
-	$(Q)-oc new-project $(LOCAL_TEST_NAMESPACE)
-	$(Q)-echo "Switching to the namespace $(LOCAL_TEST_NAMESPACE)"
-	$(Q)-oc project $(LOCAL_TEST_NAMESPACE)
+	$(Q)-oc new-project $(NAMESPACE)
+	$(Q)-echo "Switching to the namespace $(NAMESPACE)"
+	$(Q)-oc project $(NAMESPACE)
 
 .PHONY: use-namespace
 ## Log in as system:admin and enter the test namespace
 use-namespace: login-as-admin
-	$(Q)-echo "Using to the namespace $(LOCAL_TEST_NAMESPACE)"
-	$(Q)-oc project $(LOCAL_TEST_NAMESPACE)
+	$(Q)-echo "Using to the namespace $(NAMESPACE)"
+	$(Q)-oc project $(NAMESPACE)
 
 .PHONY: clean-namespace
 ## Delete the test namespace
 clean-namespace:
 	$(Q)-echo "Deleting Namespace"
-	$(Q)-oc delete project $(LOCAL_TEST_NAMESPACE)
+	$(Q)-oc delete project $(NAMESPACE)
 
 .PHONY: reset-namespace
 ## Delete an create the test namespace and deploy rbac there
 reset-namespace: login-as-admin clean-namespace create-namespace
 
-.PHONY: deploy-dev
+.PHONY: deploy-on-minishift
 ## Deploy DevCluster service on minishift
-deploy-dev: login-as-admin create-namespace build docker-image-dev
+deploy-on-minishift: login-as-admin create-namespace build docker-image-dev
 	$(Q)oc process -f ./deploy/devcluster.yaml \
         -p IMAGE=${IMAGE_DEV} \
         -p ENVIRONMENT=dev \
-        -p NAMESPACE=${LOCAL_TEST_NAMESPACE} \
+        -p NAMESPACE=${NAMESPACE} \
         | oc apply -f -
 
+.PHONY: deploy-dev
+## Deploy DevCluster on dev environment
+deploy-dev: create-namespace build docker-image-dev
+	$(Q)oc process -f ./deploy/devcluster.yaml \
+        -p IMAGE=${IMAGE_DEV} \
+        -p ENVIRONMENT=dev \
+        -p NAMESPACE=${NAMESPACE} \
+        | oc apply -f -

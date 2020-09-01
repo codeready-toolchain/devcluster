@@ -3,60 +3,9 @@ apiVersion: v1
 metadata:
   name: devcluster
 objects:
-  - apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      labels:
-        provider: codeready-toolchain
-      name: devcluster
-      namespace: ${NAMESPACE}
-  - kind: Role
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      labels:
-        provider: codeready-toolchain
-      name: devcluster
-      namespace: ${NAMESPACE}
-    rules:
-    - apiGroups:
-      - toolchain.dev.openshift.com
-      resources:
-      - usersignups
-      verbs:
-      - create
-      - get
-    - apiGroups:
-      - toolchain.dev.openshift.com
-      resources:
-      - masteruserrecords
-      verbs:
-      - get
-    - apiGroups:
-      - toolchain.dev.openshift.com
-      resources:
-      - bannedusers
-      verbs:
-      - get
-      - list
-  - kind: RoleBinding
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      labels:
-        provider: codeready-toolchain
-      name: devcluster
-      namespace: ${NAMESPACE}
-    subjects:
-    - kind: ServiceAccount
-      name: devcluster
-    roleRef:
-      kind: Role
-      name: devcluster
-      apiGroup: rbac.authorization.k8s.io
   - kind: Deployment
     apiVersion: apps/v1
     metadata:
-      labels:
-        provider: codeready-toolchain
       name: devcluster
       namespace: ${NAMESPACE}
     spec:
@@ -130,7 +79,6 @@ objects:
       name: devcluster
       namespace: ${NAMESPACE}
       labels:
-        provider: codeready-toolchain
         run: devcluster
     spec:
       ports:
@@ -146,7 +94,6 @@ objects:
     apiVersion: v1
     metadata:
       labels:
-        provider: codeready-toolchain
         run: devcluster
       name: devcluster
       namespace: ${NAMESPACE}
@@ -164,8 +111,6 @@ objects:
   - kind: ConfigMap
     apiVersion: v1
     metadata:
-      labels:
-        provider: codeready-toolchain
       name: devcluster
       namespace: ${NAMESPACE}
     type: Opaque
