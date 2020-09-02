@@ -20,7 +20,7 @@
 .rhd-nav {
   float: right;
 }
-.toolchain-state h1 {
+.devcluster-state h1 {
   font-size: 1.2em;
   margin-bottom: 0;
 }
@@ -48,7 +48,7 @@
 	text-decoration:none;
 	text-shadow:0px 1px 0px #854629;
 }
-.getstartedbutton {
+.submitbutton {
   box-shadow:inset 0px 1px 0px 0px #cf866c;
 	background:linear-gradient(to bottom, #d0451b 5%, #bc3315 100%);
 	background-color:#d0451b;

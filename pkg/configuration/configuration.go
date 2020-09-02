@@ -77,8 +77,8 @@ const (
   "realm": "devcluster-public",
   "auth-server-url": "https://sso.prod-preview.openshift.io/auth",
   "ssl-required": "none",
-  "resource": "devcluster",
-  "clientId": "devcluster",
+  "resource": "devcluster-public",
+  "clientId": "devcluster-public",
   "public-client": true
 }`
 

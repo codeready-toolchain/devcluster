@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@4.6.3/patternfly.css" crossorigin="anonymous">
   <link rel="stylesheet" href="landingpage.css">
-  <title>CodeReady Toolchain</title>
+  <title>Dev Clusters</title>
 </head>
 <body>
   <div class="pf-c-page" id="page-layout-horizontal-nav">
@@ -29,7 +29,7 @@
       <div class="pf-c-page__header-tools-group">
         <div class="pf-m-user">
           <span id="user-loggedin"><span id="username"></span> <button class="logoutbutton" onclick="keycloak.logout()">Logout</button></span>
-          <span id="user-notloggedin" onclick="login()">Login/Signup</span>
+          <span id="user-notloggedin" onclick="login()">Login</span>
         </div>
       </div>
     </div>
@@ -65,19 +65,19 @@
         </div>
       </div>
       <div class="pf-c-content">
-        <div class="toolchain-state" id="state-getstarted">
-          <button class="getstartedbutton" onclick="login()">Get Started with CodeReady Toolchain</button>
+        <div class="devcluster-state" id="state-not-logged-in">
+          <button class="submitbutton" onclick="login()">Login</button>
         </div>
-        <div class="toolchain-state" id="state-waiting-for-approval">
-          <h1><i class="fas fa-spinner fa-pulse"></i> Your CodeReady Toolchain account is waiting for approval</h1>
+        <div class="devcluster-state" id="state-request-clusters">
+          Number of Clusters: <input type="number" id="number-of-clusters" name="number-of-clusters" min="1" max="500"> <button class="submitbutton" onclick="requestClusters()">Request Clusters</button>
         </div>
-        <div class="toolchain-state" id="state-waiting-for-provisioning">
-          <h1><i class="fas fa-spinner fa-pulse"></i> Your CodeReady Toolchain account is waiting for provisioning</h1>
+        <div class="devcluster-state" id="state-waiting-for-provisioning">
+          <h1><i class="fas fa-spinner fa-pulse"></i> Your clusters are provisioning</h1>
         </div>
-        <div class="toolchain-state" id="state-provisioned">
-          <h1><i class="fas fa-spinner fa-pulse"></i> Your CodeReady Toolchain account has been provisioned</h1>
+        <div class="devcluster-state" id="state-provisioned">
+          <h1>Your clusters have been provisioned</h1>
         </div>
-        <div class="toolchain-dashboard" id="dashboard">
+        <div class="devcluster-dashboard" id="dashboard">
           <div class="pf-c-content">
             <div class="pf-l-gallery pf-m-gutter">
               <div class="pf-l-gallery__item">
@@ -92,7 +92,6 @@
               <div class="pf-l-gallery__item">
                 <div class="pf-c-card">
                   <div class="pf-c-card__body">
-                    <img class="pf-c-brand box-logo" src="codereadyws-logo.svg" alt="CodeReady Workspaces Logo" />
                     <h1>CodeReady Workspaces</h1>
                     <span><a id="cheDashboard" href="#" class="pf-c-nav__link">Start Coding..</a></span>
                   </div>

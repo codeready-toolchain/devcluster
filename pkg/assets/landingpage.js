@@ -27,16 +27,14 @@ var getJSON = function(method, url, token, callback) {
 // hides all state content.
 function hideAll() {
   document.getElementById('state-waiting-for-provisioning').style.display = 'none';
-  document.getElementById('state-waiting-for-approval').style.display = 'none';
+  document.getElementById('state-request-clusters').style.display = 'none';
   document.getElementById('state-provisioned').style.display = 'none';
-  document.getElementById('state-getstarted').style.display = 'none';
+  document.getElementById('state-not-logged-in').style.display = 'none';
   document.getElementById('state-error').style.display = 'none';
   document.getElementById('dashboard').style.display = 'none';
 }
 
-// shows state content. Given Id needs to be one of
-// state-waiting-for-provisioning, state-waiting-for-approval,
-// state-provisioned, state-getstarted, dashboard, state-error
+// shows state content. Given Id needs to be one of the element
 function show(elementId) {
   document.getElementById(elementId).style.display = 'block';
 }
@@ -84,9 +82,9 @@ function loadAuthLibrary(url, cbSuccess, cbError) {
   document.getElementsByTagName('head')[0].appendChild(script);
 }
       
-// gets the signup state once.
-function getSignupState(cbSuccess, cbError) {
-  getJSON('GET', '/api/v1/signup', keycloak.idToken, function(err, data) {
+// gets the cluster requests once.
+function getClusterRequests(cbSuccess, cbError) {
+  getJSON('GET', '/api/v1/cluster-reqs', keycloak.idToken, function(err, data) {
     if (err != null) {
       cbError(err, data);
     } else {
@@ -95,62 +93,19 @@ function getSignupState(cbSuccess, cbError) {
   })
 }
 
-// updates the signup state.
-function updateSignupState() {
-  getSignupState(function(data) {
-    if (data.status.ready === true) {
-      // account is ready to use; stop interval.
-      clearInterval(intervalRef);
-      consoleURL = data.consoleURL;
-      if (consoleURL === undefined) {
-        consoleURL = 'n/a'
-      } else {
-        consoleURL = data.consoleURL + 'topology/ns/' + data.compliantUsername + '-dev';
-      }
-      cheDashboardURL = data.cheDashboardURL;
-      if (cheDashboardURL === undefined) {
-        cheDashboardURL = 'n/a'
-      }
+// updates the provisioning state.
+function updateProvisioningState() {
+  getClusterRequests(function(data) {
       hideAll();
       show('dashboard')
-      document.getElementById('stateConsole').href = consoleURL;
-      document.getElementById('cheDashboard').href = cheDashboardURL;
-    } else if (data.status.ready === false && data.status.reason == 'Provisioning') {
-      // account is provisioning; start polling.
-      hideAll();
-      show('state-waiting-for-provisioning')
-      if (!intervalRef) {
-        // only start if there is not already a polling running.
-        intervalRef = setInterval(updateSignupState, 1000);
-      }
-    } else {
-      // account is in an unknown state, display pending approval; start polling.
-      hideAll();
-      show('state-waiting-for-approval')
-      if (!intervalRef) {
-        // only start if there is not already a polling running.
-        intervalRef = setInterval(updateSignupState, 1000);
-      }
-    }
+      // Display all requests
   }, function(err, data) {
-    if (err === 404) {
-      // signup does not exist, but user is authorized, check if we can start signup process.
-      if ('true' === window.sessionStorage.getItem('autoSignup')) {
-        // user has explicitly requested a signup
-        window.sessionStorage.removeItem('autoSignup');
-        signup();
-      } else {
-        // we still need to show GetStarted button even if the user is logged-in to SSO to avoid auto-signup without users clicking on Get Started button
-        clearInterval(intervalRef);
-        hideAll();
-        show('state-getstarted');
-      }
-    } else if (err === 401) {
+    if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.
       clearInterval(intervalRef);
       hideUser();
       hideAll();
-      show('state-getstarted');
+      show('state-not-logged-in');
       show('state-error');
       if(data != null && data.error != null){
         document.getElementById('errorStatus').textContent = data.error;
@@ -163,22 +118,20 @@ function updateSignupState() {
 }
 
 function login() {
-  // User clicked on Get Started. We can enable autoSignup after successful login now.
-  window.sessionStorage.setItem('autoSignup', 'true');
   keycloak.login()
 }
 
-// start signup process.
-function signup() {
-  getJSON('POST', '/api/v1/signup', keycloak.idToken, function(err, data) {
+// request cluster provisioning
+function requestClusters() {
+  getJSON('POST', '/api/v1/cluster-req', keycloak.idToken, function(err, data) {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));
     } else {
       hideAll();
-      show('state-waiting-for-approval');
+      show('state-waiting-for-provisioning');
     }
   });
-  intervalRef = setInterval(updateSignupState, 1000);
+  intervalRef = setInterval(updateProvisioningState, 1000);
 }
       
 // main operation, load config, load client, run client
@@ -199,13 +152,15 @@ getJSON('GET', configURL, null, function(err, data) {
         if (authenticated == true) {
           keycloak.loadUserInfo().success(function(data) {
             showUser(data.preferred_username)
-            // now check the signup state of the user.
-            updateSignupState();
+            // now check the provisioning state
+            //updateProvisioningState();
+            hideAll();
+            show('state-request-clusters');
           });
         } else {
           hideUser();
           hideAll();
-          show('state-getstarted');
+          show('state-not-logged-in');
         }
       }).error(function() {
         console.log('Failed to initialize authorization');
