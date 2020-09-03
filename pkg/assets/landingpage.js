@@ -125,14 +125,16 @@ function getClusterRequest(id, cbSuccess, cbError) {
 // updates the cluster request list.
 function updateClusterRequests() {
   getClusterRequests(function(data) {
-    show('cluster-requests')
-    // Display all requests
-    var content = "";
-    for(var i = 0; i < data.length; i++) {
-      var req = data[i];
-      content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td></tr>";
+    if (data!=null) {
+      show('cluster-requests')
+      // Display all requests
+      var content = "";
+      for(var i = 0; i < data.length; i++) {
+        var req = data[i];
+        content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td></tr>";
+      }
+      document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>Requested by</th><th>Status</th></tr>" + content + "</table>";
     }
-    document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>Requested by</th><th>Status</th></tr>" + content + "</table>";
   }, function(err, data) {
     if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.
@@ -159,7 +161,15 @@ function showClusterRequest(reqID) {
         "Created: " + data.Created + "<br/>" +
         "# of Clusters: " + data.Requested + "<br/>" +
         "Requested by: " + data.RequestedBy + "<br/>" +
-        "Status: " + data.Status + "<br/>";
+        "Status: " + data.Status + "<br/>" +
+        "<table style=\"width:100%\"><tr><th>ID</th><th>Name</th><th>URL</th><th>Status</th></tr>";
+    for (var key in data.Clusters) {
+      if (data.Clusters.hasOwnProperty(key)) {
+        var cl = data.Clusters[key];
+        content = content + "<tr><td>" + cl.ID +"</td><td>" + cl.Name + "</td><td>" + cl.URL + "</td><td>" + cl.Status + "</td></tr>";
+      }
+    }
+    content = content + "</table>";
     document.getElementById('cluster-request-details-table').innerHTML = content;
   }, function(err, data) {
     if (err === 401) {
