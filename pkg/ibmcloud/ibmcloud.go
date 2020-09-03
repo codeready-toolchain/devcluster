@@ -27,8 +27,8 @@ func Token(apikey string) (string, time.Time, error) {
 	}
 
 	defer rest.CloseResponse(res)
-	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusOK {
+		bodyString := rest.ReadBody(res.Body)
 		return "", time.Time{}, errors.Errorf("unable to obtain access token from IBM Cloud. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
 	tokenSet, err := ReadTokenSet(res)
