@@ -40,6 +40,16 @@ function hideAll() {
   document.getElementById('state-not-logged-in').style.display = 'none';
   document.getElementById('state-error').style.display = 'none';
   document.getElementById('cluster-requests').style.display = 'none';
+  document.getElementById('cluster-request-details').style.display = 'none';
+}
+
+function hideAllButClusterDetails() {
+  document.getElementById('state-waiting-for-provisioning').style.display = 'none';
+  document.getElementById('state-request-clusters').style.display = 'none';
+  document.getElementById('state-provisioned').style.display = 'none';
+  document.getElementById('state-not-logged-in').style.display = 'none';
+  document.getElementById('state-error').style.display = 'none';
+  document.getElementById('cluster-requests').style.display = 'none';
 }
 
 // shows state content. Given Id needs to be one of the element
@@ -101,6 +111,17 @@ function getClusterRequests(cbSuccess, cbError) {
   })
 }
 
+// gets the cluster request.
+function getClusterRequest(id, cbSuccess, cbError) {
+  getJSON('GET', '/api/v1/cluster-req/' + id, idToken, null,function(err, data) {
+    if (err != null) {
+      cbError(err, data);
+    } else {
+      cbSuccess(data);
+    }
+  })
+}
+
 // updates the cluster request list.
 function updateClusterRequests() {
   getClusterRequests(function(data) {
@@ -109,9 +130,37 @@ function updateClusterRequests() {
     var content = "";
     for(var i = 0; i < data.length; i++) {
       var req = data[i];
-      content = content + "<tr><td>" + req.ID +"</td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.Status + "</td></tr>";
+      content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td></tr>";
     }
-    document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>State</th></tr>" + content + "</table>";
+    document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>Requested by</th><th>Status</th></tr>" + content + "</table>";
+  }, function(err, data) {
+    if (err === 401) {
+      // user is unauthorized, show login/signup view; stop interval.
+      clearInterval(intervalRef);
+      hideUser();
+      hideAll();
+      show('state-not-logged-in');
+      show('state-error');
+      if(data != null && data.error != null){
+        document.getElementById('errorStatus').textContent = data.error;
+      }
+    } else {
+      // other error, show error box.
+      showError(err);
+    }
+  })
+}
+
+function showClusterRequest(reqID) {
+  getClusterRequest(reqID, function(data) {
+    show('cluster-request-details')
+    // Display the request details
+    var content = "ID: "+ data.ID + "<br/>" +
+        "Created: " + data.Created + "<br/>" +
+        "# of Clusters: " + data.Requested + "<br/>" +
+        "Requested by: " + data.RequestedBy + "<br/>" +
+        "Status: " + data.Status + "<br/>";
+    document.getElementById('cluster-request-details-table').innerHTML = content;
   }, function(err, data) {
     if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.
@@ -141,7 +190,7 @@ function requestClusters() {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));
     } else {
-      hideAll();
+      hideAllButClusterDetails();
       show('state-waiting-for-provisioning');
     }
   });

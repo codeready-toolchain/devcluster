@@ -10,22 +10,53 @@ import (
 
 var registry *RequestRegistry = &RequestRegistry{Requests: make(map[string]*Request)}
 
-type Request struct {
-	ID string
-	// Number of clusters requested
-	Requested   int
+// RequestTopic represents a cluster request without details about actual clusters provisioned for this request
+type RequestTopic struct {
+	ID          string
+	Requested   int // Number of clusters requested
 	Created     time.Time
-	State       string
+	Status      string
 	RequestedBy string
+}
+
+type Request struct {
+	RequestTopic `json:",inline"`
+	Clusters     map[string]*Cluster // Clusters by ID
+}
+
+type Cluster struct {
+	ID     string
+	Name   string
+	URL    string
+	Status string
 }
 
 func NewRequest(requestedBy string, n int) *Request {
 	r := &Request{
-		ID:          uuid.NewV4().String(),
-		Requested:   n,
-		Created:     time.Now(),
-		State:       "provisioning",
-		RequestedBy: requestedBy,
+		RequestTopic: RequestTopic{
+			ID:          uuid.NewV4().String(),
+			Requested:   n,
+			Created:     time.Now(),
+			Status:      "provisioning",
+			RequestedBy: requestedBy,
+		},
+		Clusters: make(map[string]*Cluster),
+	}
+
+	// FIXME mock data
+	id := uuid.NewV4().String()
+	r.Clusters[id] = &Cluster{
+		ID:     id,
+		Name:   "cluster1",
+		Status: "provisioning",
+		URL:    "https://console.openshift-1.com",
+	}
+	id = uuid.NewV4().String()
+	r.Clusters[id] = &Cluster{
+		ID:     id,
+		Name:   "cluster2",
+		Status: "provisioning",
+		URL:    "https://console.openshift-2.com",
 	}
 	registry.Add(r)
 	return r
@@ -56,7 +87,7 @@ func (r *RequestRegistry) Get(id string) *Request {
 }
 
 // AllRequests returns all Requests from the registry
-func (r *RequestRegistry) AllRequests() requests {
+func (r *RequestRegistry) AllRequests() []Request {
 	defer r.mux.RUnlock()
 	r.mux.RLock()
 	rs := make([]Request, 0, len(r.Requests))
@@ -66,23 +97,31 @@ func (r *RequestRegistry) AllRequests() requests {
 	return rs
 }
 
-// AllRequests returns all existing Cluster Requests from the default registry  sorted by creation time
-func AllRequests() []Request {
+// RequestTopics returns all existing Cluster Request Topics from the default registry  sorted by creation time
+func RequestTopics() []RequestTopic {
 	rs := registry.AllRequests()
-	sort.Sort(rs)
-	return rs
+	var tpc topics //:= make([]RequestTopic, 0, len(rs))
+	for _, req := range rs {
+		tpc = append(tpc, req.RequestTopic)
+	}
+	sort.Sort(tpc)
+	return tpc
 }
 
-type requests []Request
-
-func (s requests) Len() int {
-	return len(s)
+func RequestByID(id string) *Request {
+	return registry.Get(id)
 }
 
-func (s requests) Less(i, j int) bool {
-	return s[i].Created.Before(s[j].Created)
+type topics []RequestTopic
+
+func (t topics) Len() int {
+	return len(t)
 }
 
-func (s requests) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (t topics) Less(i, j int) bool {
+	return t[i].Created.Before(t[j].Created)
+}
+
+func (t topics) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
 }

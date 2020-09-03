@@ -42,6 +42,12 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 
 // GetHandler returns ClusterRequest resources
 func (r *ClusterRequest) GetHandler(ctx *gin.Context) {
-	reqs := cluster.AllRequests()
+	reqs := cluster.RequestTopics()
 	ctx.JSON(http.StatusOK, reqs)
+}
+
+// GetHandlerClusterReq returns ClusterRequest resource
+func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
+	req := cluster.RequestByID(ctx.Param("id"))
+	ctx.JSON(http.StatusOK, req)
 }
