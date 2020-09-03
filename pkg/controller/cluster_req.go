@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/alexeykazakov/devcluster/pkg/context"
+
 	"github.com/alexeykazakov/devcluster/pkg/cluster"
 	"github.com/alexeykazakov/devcluster/pkg/configuration"
 	"github.com/alexeykazakov/devcluster/pkg/errors"
@@ -35,7 +37,11 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	}
 
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
-	ctx.Status(http.StatusAccepted)
-	//ctx.Writer.WriteHeaderNow()
-	ctx.JSON(http.StatusAccepted, cluster.NewRequest(n))
+	ctx.JSON(http.StatusAccepted, cluster.NewRequest(ctx.GetString(context.UsernameKey), n))
+}
+
+// GetHandler returns ClusterRequest resources
+func (r *ClusterRequest) GetHandler(ctx *gin.Context) {
+	reqs := cluster.AllRequests()
+	ctx.JSON(http.StatusOK, reqs)
 }

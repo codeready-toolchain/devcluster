@@ -39,7 +39,7 @@ function hideAll() {
   document.getElementById('state-provisioned').style.display = 'none';
   document.getElementById('state-not-logged-in').style.display = 'none';
   document.getElementById('state-error').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('cluster-requests').style.display = 'none';
 }
 
 // shows state content. Given Id needs to be one of the element
@@ -101,16 +101,21 @@ function getClusterRequests(cbSuccess, cbError) {
   })
 }
 
-// updates the provisioning state.
-function updateProvisioningState() {
+// updates the cluster request list.
+function updateClusterRequests() {
   getClusterRequests(function(data) {
-      hideAll();
-      show('dashboard')
-      // Display all requests
+    show('cluster-requests')
+    // Display all requests
+    var content = "";
+    for(var i = 0; i < data.length; i++) {
+      var req = data[i];
+      content = content + "<tr><td>" + req.ID +"</td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.Status + "</td></tr>";
+    }
+    document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>State</th></tr>" + content + "</table>";
   }, function(err, data) {
     if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.
-      // clearInterval(intervalRef);
+      clearInterval(intervalRef);
       hideUser();
       hideAll();
       show('state-not-logged-in');
@@ -140,7 +145,7 @@ function requestClusters() {
       show('state-waiting-for-provisioning');
     }
   });
-  // intervalRef = setInterval(updateProvisioningState, 1000);
+  intervalRef = setInterval(updateClusterRequests, 1000);
 }
       
 // main operation, load config, load client, run client
@@ -162,10 +167,9 @@ getJSON('GET', configURL, null, null, function(err, data) {
           keycloak.loadUserInfo().success(function(data) {
             idToken = keycloak.idToken
             showUser(data.preferred_username)
-            // now check the provisioning state
-            //updateProvisioningState();
             hideAll();
             show('state-request-clusters');
+            updateClusterRequests();
           });
         } else {
           hideUser();

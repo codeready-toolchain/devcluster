@@ -70,6 +70,6 @@
   cursor: pointer;
   font-weight: bold;
 }
-#state-waiting-for-provisioning, #state-waiting-for-approval, #state-provisioning, #state-provisioned, #state-getstarted, #dashboard, #user-loggedin, #state-error {
+#state-waiting-for-provisioning, #state-provisioning, #state-provisioned, #state-not-logged-in, #state-request-clusters, #cluster-requests, #user-loggedin, #state-error {
   display: none;
 }
