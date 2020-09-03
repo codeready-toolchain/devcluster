@@ -102,7 +102,7 @@ function updateProvisioningState() {
   }, function(err, data) {
     if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.
-      clearInterval(intervalRef);
+      // clearInterval(intervalRef);
       hideUser();
       hideAll();
       show('state-not-logged-in');
@@ -131,7 +131,7 @@ function requestClusters() {
       show('state-waiting-for-provisioning');
     }
   });
-  intervalRef = setInterval(updateProvisioningState, 1000);
+  // intervalRef = setInterval(updateProvisioningState, 1000);
 }
       
 // main operation, load config, load client, run client
