@@ -2,16 +2,19 @@
 // interval reference
 var intervalRef;
 
+var idToken;
+
 // this is where we load our config from
 configURL = '/api/v1/authconfig'
 
 // loads json data from url, the callback is called with
 // error and data, with data the parsed json.
-var getJSON = function(method, url, token, callback) {
+var getJSON = function(method, url, token, params, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open(method, url, true);
-  if (token != null)
+  if (token != null) {
     xhr.setRequestHeader('Authorization', 'Bearer ' + token)
+  }
   xhr.responseType = 'json';
   xhr.onload = function() {
     var status = xhr.status;
@@ -21,7 +24,12 @@ var getJSON = function(method, url, token, callback) {
       callback(status, xhr.response);
     }
   };
-  xhr.send();
+  if (params != null) {
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.send(params)
+  } else {
+    xhr.send();
+  }
 };
 
 // hides all state content.
@@ -84,7 +92,7 @@ function loadAuthLibrary(url, cbSuccess, cbError) {
       
 // gets the cluster requests once.
 function getClusterRequests(cbSuccess, cbError) {
-  getJSON('GET', '/api/v1/cluster-reqs', keycloak.idToken, function(err, data) {
+  getJSON('GET', '/api/v1/cluster-reqs', idToken, null,function(err, data) {
     if (err != null) {
       cbError(err, data);
     } else {
@@ -123,7 +131,8 @@ function login() {
 
 // request cluster provisioning
 function requestClusters() {
-  getJSON('POST', '/api/v1/cluster-req', keycloak.idToken, function(err, data) {
+  var n = document.getElementById("number-of-clusters").value;
+  getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n, function(err, data) {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));
     } else {
@@ -135,7 +144,7 @@ function requestClusters() {
 }
       
 // main operation, load config, load client, run client
-getJSON('GET', configURL, null, function(err, data) {
+getJSON('GET', configURL, null, null, function(err, data) {
   if (err !== null) {
     console.log('error loading client config' + err);
     showError(err);
@@ -147,10 +156,11 @@ getJSON('GET', configURL, null, function(err, data) {
       keycloak = Keycloak(clientConfig);
       keycloak.init({
         onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: window.location.origin,
+        silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
       }).success(function(authenticated) {
         if (authenticated == true) {
           keycloak.loadUserInfo().success(function(data) {
+            idToken = keycloak.idToken
             showUser(data.preferred_username)
             // now check the provisioning state
             //updateProvisioningState();
