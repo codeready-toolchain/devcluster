@@ -93,6 +93,8 @@ const (
 	varNamespace = "namespace"
 	// DefaultNamespace is the default k8s namespace to use.
 	DefaultNamespace = "devcluster"
+
+	varIBMCloudAPIKey = "ibmcloud.apikey"
 )
 
 // Config encapsulates the Viper configuration which stores the
@@ -217,7 +219,12 @@ func (c *Config) GetAuthClientPublicKeysURL() string {
 	return c.v.GetString(varAuthClientPublicKeysURL)
 }
 
-// GetNamespace returns the namespace in which the registration service and host operator is running
+// GetNamespace returns the namespace in which the devcluster service and host operator is running
 func (c *Config) GetNamespace() string {
 	return c.v.GetString(varNamespace)
+}
+
+// GetIBMCloudAPIKey returns the IBM Cloud API Key
+func (c *Config) GetIBMCloudAPIKey() string {
+	return c.v.GetString(varIBMCloudAPIKey)
 }

@@ -4,7 +4,7 @@ COV_DIR = $(OUT_DIR)/coverage
 ## runs all tests with bundles assets
 test: generate
 	@echo "running the tests without coverage..."
-	go test ${V_FLAG} -race -failfast ./...
+	go test ${V_FLAG} -race ./...
 
 .PHONY: test-with-coverage
 ## runs the tests with coverage

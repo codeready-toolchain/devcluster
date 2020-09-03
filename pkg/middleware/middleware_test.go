@@ -73,10 +73,10 @@ func (s *TestAuthMiddlewareSuite) TestAuthMiddlewareService() {
 	srv := server.New(s.Config)
 
 	// set the key service url in the config
-	err = os.Setenv("REGISTRATION_AUTH_CLIENT_PUBLIC_KEYS_URL", keysEndpointURL)
+	err = os.Setenv("DEVCLUSTER_AUTH_CLIENT_PUBLIC_KEYS_URL", keysEndpointURL)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), keysEndpointURL, srv.Config().GetAuthClientPublicKeysURL(), "key url not set correctly")
-	err = os.Setenv("REGISTRATION_ENVIRONMENT", configuration.UnitTestsEnvironment)
+	err = os.Setenv("DEVCLUSTER_ENVIRONMENT", configuration.UnitTestsEnvironment)
 	require.NoError(s.T(), err)
 
 	// Setting up the routes.
