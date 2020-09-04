@@ -18,15 +18,19 @@ func TestCreateCluster(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
-			Post("global/v1/clusters").
-			JSON(fmt.Sprintf(ClusterConfigTemplate, "john")).
+			Get("global/v2/getCluster").
+			MatchParam("cluster", "some-id").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
 			Persist().
-			Reply(201).
-			BodyString(`{"id": "some-id"}`)
+			Reply(200).
+			BodyString(`{"id": "some-id", "name": "some-name"}`)
 
-		id, err := cl.CreateCluster("john")
+		cluster, err := cl.GetCluster("some-id")
 		require.NoError(t, err)
-		assert.Equal(t, "some-id", id)
+		assert.Equal(t, &Cluster{
+			Name: "some-name",
+			ID:   "some-id",
+		}, cluster)
 	})
 }
 
@@ -37,6 +41,7 @@ func TestGetCluster(t *testing.T) {
 
 		gock.New("https://containers.cloud.ibm.com").
 			Post("global/v1/clusters").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
 			JSON(fmt.Sprintf(ClusterConfigTemplate, "john")).
 			Persist().
 			Reply(201).
