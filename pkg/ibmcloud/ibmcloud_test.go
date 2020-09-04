@@ -2,7 +2,6 @@ package ibmcloud_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/alexeykazakov/devcluster/pkg/ibmcloud"
 
@@ -12,7 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var mockConfig = &MockConfig{}
+
 func TestToken(t *testing.T) {
+	cl := ibmcloud.NewClient(mockConfig)
 	t.Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
 
@@ -22,9 +24,22 @@ func TestToken(t *testing.T) {
 			Reply(200).
 			BodyString(`{"access_token": "abc","refresh_token":"qwerty","ims_user_id": 4778951,"token_type": "Bearer","expires_in": 3600,"expiration": 1598983098,"scope":"ibm openid"}`)
 
-		token, expiry, err := ibmcloud.Token("secretkey")
+		token, err := cl.Token()
 		require.NoError(t, err)
-		assert.Equal(t, "abc", token)
-		assert.True(t, expiry.After(time.Now()) && expiry.Before(time.Now().Add(time.Duration(3600)*time.Second)))
+		require.NotNil(t, token)
+		assert.Equal(t, ibmcloud.TokenSet{
+			AccessToken:  "abc",
+			RefreshToken: "qwerty",
+			ExpiresIn:    3600,
+			Expiration:   1598983098,
+			TokenType:    "Bearer",
+		}, token)
 	})
+}
+
+type MockConfig struct {
+}
+
+func (c *MockConfig) GetIBMCloudAPIKey() string {
+	return "secretkey"
 }
