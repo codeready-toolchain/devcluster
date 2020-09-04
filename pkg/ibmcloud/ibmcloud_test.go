@@ -1,9 +1,8 @@
-package ibmcloud_test
+package ibmcloud
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/alexeykazakov/devcluster/pkg/ibmcloud"
 
 	"gopkg.in/h2non/gock.v1"
 
@@ -13,28 +12,76 @@ import (
 
 var mockConfig = &MockConfig{}
 
-func TestToken(t *testing.T) {
-	cl := ibmcloud.NewClient(mockConfig)
+func TestCreateCluster(t *testing.T) {
+	cl := newClient(t)
 	t.Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
 
+		gock.New("https://containers.cloud.ibm.com").
+			Post("global/v1/clusters").
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "john")).
+			Persist().
+			Reply(201).
+			BodyString(`{"id": "some-id"}`)
+
+		id, err := cl.CreateCluster("john")
+		require.NoError(t, err)
+		assert.Equal(t, "some-id", id)
+	})
+}
+
+func TestToken(t *testing.T) {
+	t.Run("refresh", func(t *testing.T) {
+		cl := newClient(t)
+		setNewToken(t, cl, 1598983098) // Expired
+
+		var newExpiration int64
+		newExpiration = 1798983098
+		defer gock.OffAll()
 		gock.New("https://iam.cloud.ibm.com").
 			Post("identity/token").
 			Persist().
 			Reply(200).
-			BodyString(`{"access_token": "abc","refresh_token":"qwerty","ims_user_id": 4778951,"token_type": "Bearer","expires_in": 3600,"expiration": 1598983098,"scope":"ibm openid"}`)
+			BodyString(fmt.Sprintf(`{"access_token": "new-token","refresh_token":"qwerty","ims_user_id": 4778951,"token_type": "Bearer","expires_in": 3600,"expiration": %d,"scope":"ibm openid"}`, newExpiration))
 
 		token, err := cl.Token()
 		require.NoError(t, err)
 		require.NotNil(t, token)
-		assert.Equal(t, ibmcloud.TokenSet{
-			AccessToken:  "abc",
+		assert.Equal(t, TokenSet{
+			AccessToken:  "new-token",
 			RefreshToken: "qwerty",
 			ExpiresIn:    3600,
-			Expiration:   1598983098,
+			Expiration:   newExpiration,
 			TokenType:    "Bearer",
 		}, token)
 	})
+}
+
+func newClient(t *testing.T) *Client {
+	cl := NewClient(mockConfig)
+	setNewToken(t, cl, 1998983098)
+	return cl
+}
+
+func setNewToken(t *testing.T, cl *Client, expiration int64) {
+	cl.token = nil
+	defer gock.OffAll()
+	gock.New("https://iam.cloud.ibm.com").
+		Post("identity/token").
+		Persist().
+		Reply(200).
+		BodyString(fmt.Sprintf(`{"access_token": "abc","refresh_token":"qwerty","ims_user_id": 4778951,"token_type": "Bearer","expires_in": 3600,"expiration": %d,"scope":"ibm openid"}`, expiration))
+
+	token, err := cl.Token()
+	require.NoError(t, err)
+	require.NotNil(t, token)
+	assert.Equal(t, TokenSet{
+		AccessToken:  "abc",
+		RefreshToken: "qwerty",
+		ExpiresIn:    3600,
+		Expiration:   expiration,
+		TokenType:    "Bearer",
+	}, token)
 }
 
 type MockConfig struct {

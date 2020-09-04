@@ -46,11 +46,14 @@ func (c *Client) Token() (TokenSet, error) {
 		c.tokenMux.RUnlock()
 		c.tokenMux.Lock()
 		defer c.tokenMux.Unlock()
-		var err error
 		if tokenExpired(c.token) {
+			var err error
 			c.token, err = c.obtainNewToken()
+			if err != nil {
+				return TokenSet{}, err
+			}
 		}
-		return *c.token, err
+		return *c.token, nil
 	}
 	defer c.tokenMux.RUnlock()
 	return *c.token, nil
@@ -61,7 +64,7 @@ func tokenExpired(token *TokenSet) bool {
 	return token == nil || time.Now().After(time.Unix(token.Expiration-60, 0))
 }
 
-const clusterConfigTemplate = `
+const ClusterConfigTemplate = `
 {
   "dataCenter": "wdc04",
   "disableAutoUpdate": true,
@@ -80,12 +83,13 @@ func (c *Client) CreateCluster(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	body := bytes.NewBuffer([]byte(fmt.Sprintf(clusterConfigTemplate, name)))
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, name)))
 	req, err := http.NewRequest("POST", "https://containers.cloud.ibm.com/global/v1/clusters", body)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Add("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create cluster")
@@ -96,13 +100,8 @@ func (c *Client) CreateCluster(name string) (string, error) {
 		return "", errors.Errorf("unable to obtain access token from IBM Cloud. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
 
-	var objmap map[string]json.RawMessage
-	err = json.Unmarshal([]byte(bodyString), &objmap)
-	if err != nil {
-		return "", errors.Wrapf(err, "error when unmarshal json with cluster ID %s ", bodyString)
-	}
-
 	var idObj ID
+	err = json.Unmarshal([]byte(bodyString), &idObj)
 	if err != nil {
 		return "", errors.Wrapf(err, "error when unmarshal json with cluster ID %s ", bodyString)
 	}
