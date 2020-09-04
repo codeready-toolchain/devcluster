@@ -37,7 +37,9 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	}
 
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
-	ctx.JSON(http.StatusAccepted, cluster.NewRequest(ctx.GetString(context.UsernameKey), n))
+	req := cluster.NewRequest(ctx.GetString(context.UsernameKey), n)
+	req.Start()
+	ctx.JSON(http.StatusAccepted, req.RequestTopic)
 }
 
 // GetHandler returns ClusterRequest resources

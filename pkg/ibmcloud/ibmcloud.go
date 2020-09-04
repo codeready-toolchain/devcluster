@@ -76,6 +76,10 @@ const ClusterConfigTemplate = `
   "workerNum": 2
 }`
 
+type ID struct {
+	ID string `json:"id"`
+}
+
 // CreateCluster creates a cluster
 // Returns the cluster ID
 func (c *Client) CreateCluster(name string) (string, error) {
@@ -97,7 +101,7 @@ func (c *Client) CreateCluster(name string) (string, error) {
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusCreated {
-		return "", errors.Errorf("unable to obtain access token from IBM Cloud. Response status: %s. Response body: %s", res.Status, bodyString)
+		return "", errors.Errorf("unable to create cluster. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
 
 	var idObj ID
@@ -108,8 +112,70 @@ func (c *Client) CreateCluster(name string) (string, error) {
 	return idObj.ID, nil
 }
 
-type ID struct {
-	ID string `json:"id"`
+type Cluster struct {
+	ID                string  `json:"id"`
+	Name              string  `json:"name"`
+	Region            string  `json:"region"`
+	CreatedDate       string  `json:"createdDate"`
+	MasterKubeVersion string  `json:"masterKubeVersion"`
+	WorkerCount       int     `json:"workerCount"`
+	Location          string  `json:"location"`
+	Datacenter        string  `json:"datacenter"`
+	State             string  `json:"state"`
+	Type              string  `json:"type"`
+	Crn               string  `json:"crn"`
+	Ingress           Ingress `json:"ingress"`
+}
+
+type Ingress struct {
+	Hostname string `json:"hostname"`
+}
+
+//{
+//    "state": "deploying",
+//    "ingress": {
+//        "hostname": "",
+//        "secretName": "",
+//        "status": "",
+//        "message": ""
+//    },
+//}
+
+//{
+//    "state": "normal",
+//    "ingress": {
+//        "hostname": "johnsmith-2-os3-4-sjc04-f5541308b177087861a229b886140c95-0000.us-east.containers.appdomain.cloud",
+//        "secretName": "johnsmith-2-os3-4-sjc04-f5541308b177087861a229b886140c95-0000",
+//    },
+//}
+
+// GetCluster fetches the cluster with the given ID/name
+func (c *Client) GetCluster(id string) (*Cluster, error) {
+	token, err := c.Token()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://containers.cloud.ibm.com/global/v2/getCluster?cluster=%s", id), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unable to get cluster. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var cluster Cluster
+	err = json.Unmarshal([]byte(bodyString), &cluster)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when unmarshal json with cluster %s ", bodyString)
+	}
+	return &cluster, nil
 }
 
 // obtainNewToken obtains an access token

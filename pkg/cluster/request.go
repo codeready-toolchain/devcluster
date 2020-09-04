@@ -1,14 +1,14 @@
 package cluster
 
 import (
-	"sort"
 	"sync"
 	"time"
 
+	"github.com/alexeykazakov/devcluster/pkg/ibmcloud"
+	"github.com/alexeykazakov/devcluster/pkg/log"
+
 	uuid "github.com/satori/go.uuid"
 )
-
-var registry *RequestRegistry = &RequestRegistry{Requests: make(map[string]*Request)}
 
 // RequestTopic represents a cluster request without details about actual clusters provisioned for this request
 type RequestTopic struct {
@@ -16,12 +16,15 @@ type RequestTopic struct {
 	Requested   int // Number of clusters requested
 	Created     time.Time
 	Status      string
+	Error       string
 	RequestedBy string
 }
 
 type Request struct {
 	RequestTopic `json:",inline"`
 	Clusters     map[string]*Cluster // Clusters by ID
+	clusterMux   sync.RWMutex
+	statusMux    sync.RWMutex
 }
 
 type Cluster struct {
@@ -29,6 +32,7 @@ type Cluster struct {
 	Name   string
 	URL    string
 	Status string
+	Error  string
 }
 
 func NewRequest(requestedBy string, n int) *Request {
@@ -43,73 +47,77 @@ func NewRequest(requestedBy string, n int) *Request {
 		Clusters: make(map[string]*Cluster),
 	}
 
-	// FIXME mock data
-	id := uuid.NewV4().String()
-	r.Clusters[id] = &Cluster{
-		ID:     id,
-		Name:   "cluster1",
-		Status: "provisioning",
-		URL:    "https://console.openshift-1.com",
-	}
-	id = uuid.NewV4().String()
-	r.Clusters[id] = &Cluster{
-		ID:     id,
-		Name:   "cluster2",
-		Status: "provisioning",
-		URL:    "https://console.openshift-2.com",
-	}
-	registry.Add(r)
+	DefaultRegistry.Add(r)
 	return r
 }
 
-// RequestRegistry represents a registry of all cluster resources
-type RequestRegistry struct {
-	mux      sync.RWMutex
-	Requests map[string]*Request
+func (r *Request) Add(c *Cluster) {
+	defer r.clusterMux.Unlock()
+	r.clusterMux.Lock()
+	r.Clusters[c.ID] = c
 }
 
-func (r *RequestRegistry) Add(req *Request) {
-	defer r.mux.Unlock()
-	r.mux.Lock()
-	r.Requests[req.ID] = req
+func (r *Request) Remove(id string) {
+	defer r.clusterMux.Unlock()
+	r.clusterMux.Lock()
+	r.Clusters[id] = nil
 }
 
-func (r *RequestRegistry) Remove(id string) {
-	defer r.mux.Unlock()
-	r.mux.Lock()
-	r.Requests[id] = nil
+func (r *Request) Get(id string) *Cluster {
+	defer r.clusterMux.RUnlock()
+	r.clusterMux.RLock()
+	return r.Clusters[id]
 }
 
-func (r *RequestRegistry) Get(id string) *Request {
-	defer r.mux.RUnlock()
-	r.mux.RLock()
-	return r.Requests[id]
-}
-
-// AllRequests returns all Requests from the registry
-func (r *RequestRegistry) AllRequests() []Request {
-	defer r.mux.RUnlock()
-	r.mux.RLock()
-	rs := make([]Request, 0, len(r.Requests))
-	for _, req := range r.Requests {
-		rs = append(rs, *req)
+func (r *Request) GetClusters() []Cluster {
+	clusters := make([]Cluster, 0, r.Len())
+	defer r.clusterMux.RUnlock()
+	r.clusterMux.RLock()
+	for _, c := range r.Clusters {
+		clusters = append(clusters, *c)
 	}
-	return rs
+	return clusters
 }
 
-// RequestTopics returns all existing Cluster Request Topics from the default registry  sorted by creation time
-func RequestTopics() []RequestTopic {
-	rs := registry.AllRequests()
-	var tpc topics //:= make([]RequestTopic, 0, len(rs))
-	for _, req := range rs {
-		tpc = append(tpc, req.RequestTopic)
+func (r *Request) Len() int {
+	defer r.clusterMux.RUnlock()
+	r.clusterMux.RLock()
+	return len(r.Clusters)
+}
+
+func (r *Request) SetStatus(status, error string) {
+	defer r.statusMux.Unlock()
+	r.statusMux.Lock()
+	r.Status = status
+	r.Error = error
+}
+
+func (r *Request) GetStatus() string {
+	defer r.statusMux.RUnlock()
+	r.statusMux.RLock()
+	return r.Status
+}
+
+func (r *Request) SetStatusToSuccessIfDone() {
+	defer r.statusMux.Unlock()
+	r.statusMux.Lock()
+	if r.Len() < r.Requested {
+		return
 	}
-	sort.Sort(tpc)
-	return tpc
+	for _, c := range r.GetClusters() {
+		if !clusterReady(c) {
+			return
+		}
+	}
+	r.Status = "ready"
+	r.Error = ""
 }
 
-func RequestByID(id string) *Request {
-	return registry.Get(id)
+// Start starts provisioning clusters
+func (r *Request) Start() {
+	for i := 0; i < r.Requested; i++ {
+		go r.provision()
+	}
 }
 
 type topics []RequestTopic
@@ -124,4 +132,74 @@ func (t topics) Less(i, j int) bool {
 
 func (t topics) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
+}
+
+// provision provisions one cluster
+func (r *Request) provision() {
+	name := uuid.NewV4().String() // TODO generate a better name
+	var id string
+	var err error
+	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.
+	for i := 0; i < 6; i++ {
+		id, err = DefaultRegistry.client.CreateCluster(name)
+		if err == nil {
+			break
+		}
+		log.Error(nil, err, "unable to create cluster")
+		time.Sleep(10 * time.Second)
+	}
+	if err != nil {
+		// Set request status to failed and break
+		r.SetStatus("failed", err.Error())
+		return
+	}
+	in3Hours := time.Now().Add(3 * time.Hour)
+	for time.Now().Before(in3Hours) { // timeout in three hours
+		c, err := DefaultRegistry.client.GetCluster(id)
+		if err != nil {
+			log.Error(nil, err, "unable to get cluster")
+			r.clusterFailed(err, id, name)
+			// Do not exist. Try again in 30 seconds.
+		} else {
+			clusterToAdd := convertCluster(*c)
+			r.Add(clusterToAdd)
+			if clusterReady(*clusterToAdd) { // Ready
+				r.SetStatusToSuccessIfDone()
+				// TODO add user
+				break
+			}
+		}
+		time.Sleep(30 * time.Second)
+	}
+
+}
+
+func clusterReady(c Cluster) bool {
+	return c.Status == "normal" && c.URL != ""
+}
+
+func (r *Request) clusterFailed(err error, id, name string) {
+	clToUpdate := r.Get(id)
+	if clToUpdate == nil {
+		clToUpdate = &Cluster{
+			ID:   id,
+			Name: name,
+		}
+	}
+	clToUpdate.Error = err.Error()
+	clToUpdate.Status = "failed"
+	r.Add(clToUpdate)
+}
+
+func convertCluster(from ibmcloud.Cluster) *Cluster {
+	console := from.Ingress.Hostname
+	if console != "" {
+		console = "https://console-openshift-console." + console
+	}
+	return &Cluster{
+		ID:     from.ID,
+		URL:    console,
+		Status: from.State,
+		Name:   from.Name,
+	}
 }

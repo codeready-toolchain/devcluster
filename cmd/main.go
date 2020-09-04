@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alexeykazakov/devcluster/pkg/cluster"
+
 	"github.com/alexeykazakov/devcluster/pkg/configuration"
 	"github.com/alexeykazakov/devcluster/pkg/log"
 	"github.com/alexeykazakov/devcluster/pkg/server"
@@ -18,6 +20,7 @@ func main() {
 	log.Init("devcluster-service")
 
 	config := configuration.New()
+	cluster.InitDefaultRegistry(config)
 
 	srv := server.New(config)
 

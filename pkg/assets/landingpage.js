@@ -162,11 +162,12 @@ function showClusterRequest(reqID) {
         "# of Clusters: " + data.Requested + "<br/>" +
         "Requested by: " + data.RequestedBy + "<br/>" +
         "Status: " + data.Status + "<br/>" +
-        "<table style=\"width:100%\"><tr><th>ID</th><th>Name</th><th>URL</th><th>Status</th></tr>";
+        "Error: " + data.Error + "<br/>" +
+        "<table style=\"width:100%\"><tr><th>ID</th><th>Name</th><th>URL</th><th>Status</th><th>Error</th></tr>";
     for (var key in data.Clusters) {
       if (data.Clusters.hasOwnProperty(key)) {
         var cl = data.Clusters[key];
-        content = content + "<tr><td>" + cl.ID +"</td><td>" + cl.Name + "</td><td>" + cl.URL + "</td><td>" + cl.Status + "</td></tr>";
+        content = content + "<tr><td>" + cl.ID +"</td><td>" + cl.Name + "</td><td>" + cl.URL + "</td><td>" + cl.Status + "</td><td>" + cl.Error + "</td></tr>";
       }
     }
     content = content + "</table>";
