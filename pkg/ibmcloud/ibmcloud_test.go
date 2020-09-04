@@ -30,6 +30,24 @@ func TestCreateCluster(t *testing.T) {
 	})
 }
 
+func TestGetCluster(t *testing.T) {
+	cl := newClient(t)
+	t.Run("OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Post("global/v1/clusters").
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "john")).
+			Persist().
+			Reply(201).
+			BodyString(`{"id": "some-id"}`)
+
+		id, err := cl.CreateCluster("john")
+		require.NoError(t, err)
+		assert.Equal(t, "some-id", id)
+	})
+}
+
 func TestToken(t *testing.T) {
 	t.Run("refresh", func(t *testing.T) {
 		cl := newClient(t)

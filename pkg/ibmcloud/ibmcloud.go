@@ -131,24 +131,6 @@ type Ingress struct {
 	Hostname string `json:"hostname"`
 }
 
-//{
-//    "state": "deploying",
-//    "ingress": {
-//        "hostname": "",
-//        "secretName": "",
-//        "status": "",
-//        "message": ""
-//    },
-//}
-
-//{
-//    "state": "normal",
-//    "ingress": {
-//        "hostname": "johnsmith-2-os3-4-sjc04-f5541308b177087861a229b886140c95-0000.us-east.containers.appdomain.cloud",
-//        "secretName": "johnsmith-2-os3-4-sjc04-f5541308b177087861a229b886140c95-0000",
-//    },
-//}
-
 // GetCluster fetches the cluster with the given ID/name
 func (c *Client) GetCluster(id string) (*Cluster, error) {
 	token, err := c.Token()
