@@ -95,6 +95,8 @@ const (
 	DefaultNamespace = "devcluster"
 
 	varIBMCloudAPIKey = "ibmcloud.apikey"
+
+	varMongodbConnectionString = "mongodb.connection_string"
 )
 
 // Config encapsulates the Viper configuration which stores the
@@ -227,4 +229,8 @@ func (c *Config) GetNamespace() string {
 // GetIBMCloudAPIKey returns the IBM Cloud API Key
 func (c *Config) GetIBMCloudAPIKey() string {
 	return c.v.GetString(varIBMCloudAPIKey)
+}
+
+func (c *Config) GetMongodbConnectionString() string {
+	return c.v.GetString(varMongodbConnectionString)
 }

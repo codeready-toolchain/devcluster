@@ -77,6 +77,11 @@ objects:
                     secretKeyRef:
                       name: devcluster
                       key: ibmcloud.apikey
+                - name: DEVCLUSTER_MONGODB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: devcluster
+                      key: mongodb.connectionstring
   - kind: Service
     apiVersion: v1
     metadata:

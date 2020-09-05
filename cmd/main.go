@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alexeykazakov/devcluster/pkg/mongodb"
+
 	"github.com/alexeykazakov/devcluster/pkg/cluster"
 
 	"github.com/alexeykazakov/devcluster/pkg/configuration"
@@ -20,11 +22,17 @@ func main() {
 	log.Init("devcluster-service")
 
 	config := configuration.New()
-	cluster.InitDefaultRegistry(config)
+	disconnect, err := mongodb.InitDefaultClient(config.GetMongodbConnectionString())
+	if err != nil {
+		panic(err.Error())
+	}
+	defer disconnect()
+
+	cluster.InitDefaultClusterService(config)
 
 	srv := server.New(config)
 
-	err := srv.SetupRoutes()
+	err = srv.SetupRoutes()
 	if err != nil {
 		panic(err.Error())
 	}

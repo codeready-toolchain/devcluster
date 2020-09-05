@@ -37,19 +37,30 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	}
 
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
-	req := cluster.NewRequest(ctx.GetString(context.UsernameKey), n)
-	req.Start()
-	ctx.JSON(http.StatusAccepted, req.RequestTopic)
+	req, err := cluster.DefaultClusterService.StartNewRequest(ctx.GetString(context.UsernameKey), n)
+	if err != nil {
+		log.Error(ctx, err, "error requesting clusters")
+		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")
+	}
+	ctx.JSON(http.StatusAccepted, req)
 }
 
 // GetHandler returns ClusterRequest resources
 func (r *ClusterRequest) GetHandler(ctx *gin.Context) {
-	reqs := cluster.RequestTopics()
+	reqs, err := cluster.DefaultClusterService.Requests()
+	if err != nil {
+		log.Error(ctx, err, "error fetching cluster requests")
+		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster requests")
+	}
 	ctx.JSON(http.StatusOK, reqs)
 }
 
 // GetHandlerClusterReq returns ClusterRequest resource
 func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
-	req := cluster.RequestByID(ctx.Param("id"))
+	req, err := cluster.DefaultClusterService.RequestWithClusters(ctx.Param("id"))
+	if err != nil {
+		log.Error(ctx, err, "error fetching cluster request")
+		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster request")
+	}
 	ctx.JSON(http.StatusOK, req)
 }
