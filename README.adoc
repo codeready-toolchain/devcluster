@@ -41,11 +41,29 @@ The resulting binare *does not use bundled assets* but reads static content dire
 
 === Tests
 
-Tests are run by executing:
+==== Unit Tests
+
+Run the unit tests by executing:
 
 ```
 make test
 ```
+
+==== Integration Tests
+
+Integration tests require access to a test MongoDB database.
+
+Set `DEVCLUSTER_MONGODB_CONNECTION_STRING` environment variable to your test MongoDB:
+```
+export DEVCLUSTER_MONGODB_CONNECTION_STRING="<connection_string>"
+```
+
+The run the integration tests by executing:
+
+```
+make test-integration
+```
+
 
 Tests are run with bundled assets, see above.
 
