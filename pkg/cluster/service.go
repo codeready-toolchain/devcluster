@@ -51,7 +51,7 @@ func InitDefaultClusterService(config ibmcloud.Configuration) {
 }
 
 func (s *ClusterService) Requests() ([]Request, error) {
-	return getRequests()
+	return getAllRequests()
 }
 
 func (s *ClusterService) RequestWithClusters(requestID string) (*RequestWithClusters, error) {
@@ -89,7 +89,7 @@ func (s *ClusterService) StartNewRequest(requestedBy string, n int) (Request, er
 	}
 	for i := 0; i < r.Requested; i++ {
 		go func() {
-			err := provisionRequest(r)
+			err := provisionNewCluster(r)
 			if err != nil {
 				log.Error(nil, err, "unable to provision a cluster")
 			}
@@ -97,6 +97,48 @@ func (s *ClusterService) StartNewRequest(requestedBy string, n int) (Request, er
 	}
 
 	return r, nil
+}
+
+// ResumeProvisioningRequests load requests that are still provisioning and wait for their clusters to be ready to update the status
+func (s *ClusterService) ResumeProvisioningRequests() error {
+	requests, err := getRequestsWithStatus("provisioning")
+	if err != nil {
+		return err
+	}
+	for _, r := range requests {
+		resumeRequest := r
+		clusters, err := getClusters(resumeRequest.ID)
+		if err != nil {
+			return err
+		}
+		// Update provisioning clusters
+		for _, cluster := range clusters {
+			resumeCluster := cluster // need to use a copy in goroutine
+			if clusterProvisioningPending(resumeCluster) {
+				go func() {
+					log.Infof(nil, "resuming provisioning cluster %s", resumeCluster.Name)
+					err := waitForClusterToBeReady(resumeRequest, resumeCluster.ID, resumeCluster.Name)
+					if err != nil {
+						log.Error(nil, err, "unable to provision a cluster")
+					}
+				}()
+			}
+		}
+		// Start provisioning missing clusters
+		count := len(clusters)
+		if count < resumeRequest.Requested {
+			for i := count; i < resumeRequest.Requested; i++ {
+				go func() {
+					err := provisionNewCluster(resumeRequest)
+					if err != nil {
+						log.Error(nil, err, "unable to provision a cluster")
+					}
+				}()
+			}
+		}
+	}
+
+	return nil
 }
 
 func hash(s string) uint32 {
@@ -108,8 +150,8 @@ func hash(s string) uint32 {
 	return h.Sum32()
 }
 
-// provisionRequest provisions one new cluster
-func provisionRequest(r Request) error {
+// provisionNewCluster creates one new cluster
+func provisionNewCluster(r Request) error {
 	name := fmt.Sprintf("redhat-%d", hash(uuid.NewV4().String()))
 	var id string
 	var err error
@@ -129,12 +171,18 @@ func provisionRequest(r Request) error {
 		err := updateRequestStatus(r.ID, "failed", err.Error())
 		return err
 	}
+	log.Infof(nil, "starting provisioning cluster %s", name)
+	return waitForClusterToBeReady(r, id, name)
+}
+
+// waitForClusterToBeReady for the cluster to be ready
+func waitForClusterToBeReady(r Request, clusterID, clusterName string) error {
 	in3Hours := time.Now().Add(3 * time.Hour)
 	for time.Now().Before(in3Hours) { // timeout in three hours
-		c, err := DefaultClusterService.ibmCloudClient.GetCluster(id)
+		c, err := DefaultClusterService.ibmCloudClient.GetCluster(clusterID)
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")
-			err := clusterFailed(err, id, name, r.ID)
+			err := clusterFailed(err, clusterID, clusterName, r.ID)
 			if err != nil {
 				return err
 			}
@@ -161,6 +209,11 @@ func provisionRequest(r Request) error {
 
 func clusterReady(c Cluster) bool {
 	return c.Status == "normal" && c.URL != ""
+}
+
+// clusterProvisioningPending returns true if cluster is still provisioning
+func clusterProvisioningPending(c Cluster) bool {
+	return !clusterReady(c) && c.Status != "failed" && c.Status != "deleted"
 }
 
 func clusterFailed(clErr error, id, name, reqID string) error {

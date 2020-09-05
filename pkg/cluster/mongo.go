@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/alexeykazakov/devcluster/pkg/log"
+
 	"github.com/alexeykazakov/devcluster/pkg/mongodb"
 
 	"github.com/pkg/errors"
@@ -34,9 +36,19 @@ func getRequest(id string) (*Request, error) {
 	return &r, nil
 }
 
-func getRequests() ([]Request, error) {
+func getAllRequests() ([]Request, error) {
+	return getRequests(bson.D{})
+}
+
+func getRequestsWithStatus(status string) ([]Request, error) {
+	return getRequests(bson.D{
+		{"status", status},
+	})
+}
+
+func getRequests(d bson.D) ([]Request, error) {
 	requests := make([]Request, 0, 0)
-	cursor, err := mongodb.ClusterRequests().Find(context.Background(), bson.D{})
+	cursor, err := mongodb.ClusterRequests().Find(context.Background(), d)
 	if err != nil {
 		return requests, errors.Wrap(err, "unable to load cluster requests from mongo")
 	}
@@ -79,6 +91,7 @@ func setRequestStatusToSuccessIfDone(req Request) error {
 			return nil
 		}
 	}
+	log.Infof(nil, "request %s is ready", req.ID)
 	return updateRequestStatus(req.ID, "ready", "")
 }
 
@@ -97,7 +110,7 @@ func replaceRequest(req Request) error {
 
 func replaceCluster(c Cluster) error {
 	opts := options.Replace().SetUpsert(true)
-	_, err := mongodb.ClusterRequests().ReplaceOne(
+	_, err := mongodb.Clusters().ReplaceOne(
 		context.Background(),
 		bson.D{
 			{"_id", c.ID},

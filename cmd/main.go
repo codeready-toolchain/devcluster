@@ -29,6 +29,11 @@ func main() {
 	defer disconnect()
 
 	cluster.InitDefaultClusterService(config)
+	// If there are still provisioning requests left from previous sessions then resume them
+	err = cluster.DefaultClusterService.ResumeProvisioningRequests()
+	if err != nil {
+		panic(err.Error())
+	}
 
 	srv := server.New(config)
 
