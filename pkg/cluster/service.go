@@ -141,7 +141,7 @@ func provisionRequest(r Request) error {
 			// Do not exist. Try again in 30 seconds.
 		} else {
 			clusterToAdd := convertCluster(*c, r.ID)
-			err := insertCluster(clusterToAdd)
+			err := replaceCluster(clusterToAdd)
 			if err != nil {
 				return err
 			}

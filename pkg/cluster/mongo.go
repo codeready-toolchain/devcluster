@@ -108,11 +108,6 @@ func replaceCluster(c Cluster) error {
 	return errors.Wrap(err, "unable to replace cluster")
 }
 
-func insertCluster(c Cluster) error {
-	_, err := mongodb.Clusters().InsertOne(context.Background(), convertClusterToBSON(c))
-	return errors.Wrap(err, "unable to insert cluster")
-}
-
 func getCluster(id string) (*Cluster, error) {
 	res := mongodb.Clusters().FindOne(
 		context.Background(),
