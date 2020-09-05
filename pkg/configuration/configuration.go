@@ -43,8 +43,9 @@ const (
 	// varEnvironment specifies service environment such as prod, stage, unit-tests, e2e-tests, dev, etc
 	varEnvironment = "environment"
 	// DefaultEnvironment is the default environment
-	DefaultEnvironment   = "prod"
-	UnitTestsEnvironment = "unit-tests"
+	DefaultEnvironment          = "prod"
+	UnitTestsEnvironment        = "unit-tests"
+	IntegrationTestsEnvironment = "integration-tests"
 
 	varLogLevel = "log.level"
 	// DefaultLogLevel is the default log level used in your service.
@@ -97,6 +98,8 @@ const (
 	varIBMCloudAPIKey = "ibmcloud.apikey"
 
 	varMongodbConnectionString = "mongodb.connection_string"
+	varMongodbDatabase         = "mongodb.database"
+	DefaultMongodbDatabase     = "devcluster"
 )
 
 // Config encapsulates the Viper configuration which stores the
@@ -140,6 +143,7 @@ func (c *Config) setConfigDefaults() {
 	c.v.SetDefault(varAuthClientConfigContentType, DefaultAuthClientConfigContentType)
 	c.v.SetDefault(varAuthClientPublicKeysURL, DefaultAuthClientPublicKeysURL)
 	c.v.SetDefault(varNamespace, DefaultNamespace)
+	c.v.SetDefault(varMongodbDatabase, DefaultMongodbDatabase)
 }
 
 // GetHTTPAddress returns the HTTP address (as set via default, config file, or
@@ -233,4 +237,9 @@ func (c *Config) GetIBMCloudAPIKey() string {
 
 func (c *Config) GetMongodbConnectionString() string {
 	return c.v.GetString(varMongodbConnectionString)
+}
+
+// GetMongodbDatabase returns the mongo database name
+func (c *Config) GetMongodbDatabase() string {
+	return c.v.GetString(varMongodbDatabase)
 }

@@ -106,7 +106,7 @@ func (s *ClusterService) ResumeProvisioningRequests() error {
 		return err
 	}
 	for _, r := range requests {
-		resumeRequest := r
+		resumeRequest := r // need to use a copy in goroutine
 		clusters, err := getClusters(resumeRequest.ID)
 		if err != nil {
 			return err

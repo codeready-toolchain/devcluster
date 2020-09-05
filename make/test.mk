@@ -1,18 +1,24 @@
 COV_DIR = $(OUT_DIR)/coverage
 
 .PHONY: test
-## runs all tests with bundles assets
+## runs the unit tests with bundles assets
 test: generate
-	@echo "running the tests without coverage..."
-	go test ${V_FLAG} -race ./...
+	@echo "running the unit tests without coverage..."
+	go test ${V_FLAG} -race ./pkg/...
+
+.PHONY: test-integration
+## runs the integration tests
+test-integration: generate
+	@echo "running the integration tests without coverage..."
+	go test ${V_FLAG} -race ./test/...
 
 .PHONY: test-with-coverage
-## runs the tests with coverage
+## runs the unit tests with coverage
 test-with-coverage: generate
-	@echo "running the tests with coverage..."
+	@echo "running the unit tests with coverage..."
 	@-mkdir -p $(COV_DIR)
 	@-rm $(COV_DIR)/coverage.txt
-	go test -timeout 10m -vet off ${V_FLAG} -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./...
+	go test -timeout 10m -vet off ${V_FLAG} -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./pkg/...
 
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io. 

@@ -22,7 +22,7 @@ func main() {
 	log.Init("devcluster-service")
 
 	config := configuration.New()
-	disconnect, err := mongodb.InitDefaultClient(config.GetMongodbConnectionString())
+	disconnect, err := mongodb.InitDefaultClient(config)
 	if err != nil {
 		panic(err.Error())
 	}

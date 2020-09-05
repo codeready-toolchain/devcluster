@@ -8,17 +8,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var Client *mongo.Client
+var defaultClient *mongoClient
 
-func InitDefaultClient(connectionString string) (func(), error) {
+type Config interface {
+	GetMongodbConnectionString() string
+	GetMongodbDatabase() string
+}
+
+type mongoClient struct {
+	client *mongo.Client
+	config Config
+}
+
+func InitDefaultClient(config Config) (func(), error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	c, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString))
+	c, err := mongo.Connect(ctx, options.Client().ApplyURI(config.GetMongodbConnectionString()))
 	if err != nil {
 		return nil, err
 	}
-	Client = c
-
+	defaultClient = &mongoClient{
+		client: c,
+		config: config,
+	}
 	return func() {
 		if err = c.Disconnect(ctx); err != nil {
 			panic(err)
@@ -27,7 +39,7 @@ func InitDefaultClient(connectionString string) (func(), error) {
 }
 
 func Devcluster() *mongo.Database {
-	return Client.Database("devcluster")
+	return defaultClient.client.Database(defaultClient.config.GetMongodbDatabase())
 }
 
 func ClusterRequests() *mongo.Collection {
