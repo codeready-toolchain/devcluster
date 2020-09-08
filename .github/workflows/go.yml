@@ -33,5 +33,11 @@ jobs:
     - name: Build
       run: make build
 
-    - name: Test
+    - name: Unit Tests
       run: make test
+
+    - name: Integration Tests
+      env:
+        DEVCLUSTER_MONGODB_CONNECTION_STRING: ${{ secrets.DEVCLUSTER_MONGODB_CONNECTION_STRING }}
+
+      run: make test-integration
