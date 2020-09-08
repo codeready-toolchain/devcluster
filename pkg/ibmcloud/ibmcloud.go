@@ -20,6 +20,11 @@ type Configuration interface {
 	GetIBMCloudAPIKey() string
 }
 
+type ICClient interface {
+	CreateCluster(name string) (string, error)
+	GetCluster(id string) (*Cluster, error)
+}
+
 type Client struct {
 	config   Configuration
 	token    *TokenSet
