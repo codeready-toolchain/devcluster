@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"hash/fnv"
@@ -45,7 +46,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Config.GetViperInstance().Set("mongodb.database", dbname)
 	disconnect, err := mongodb.InitDefaultClient(s.Config)
 	if err != nil {
-		fmt.Printf("Connection string:" + s.Config.GetMongodbConnectionString())
+		if ""==s.Config.GetMongodbConnectionString() {
+			panic(errors.New("mongoDB connection string is not set"))
+		}
+		fmt.Printf("Connection string: %s\n", s.Config.GetMongodbConnectionString())
 		panic(err)
 	}
 	s.mongoDisconnect = disconnect
