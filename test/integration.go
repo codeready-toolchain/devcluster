@@ -3,9 +3,6 @@ package test
 import (
 	"context"
 	"errors"
-	"fmt"
-	uuid "github.com/satori/go.uuid"
-	"hash/fnv"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,28 +38,16 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		panic("DEVCLUSTER_MONGODB_CONNECTION_STRING env var is not set. It must be set to a test MongoDB")
 	}
 
-	// Random db name
-	dbname:=fmt.Sprintf("devclustertest-%d", hash(uuid.NewV4().String()))
-	s.Config.GetViperInstance().Set("mongodb.database", dbname)
+	s.Config.GetViperInstance().Set("mongodb.database", "devcluster-test")
+	if ""==s.Config.GetMongodbConnectionString() {
+		panic(errors.New("mongoDB connection string is not set"))
+	}
 	disconnect, err := mongodb.InitDefaultClient(s.Config)
 	if err != nil {
-		if ""==s.Config.GetMongodbConnectionString() {
-			panic(errors.New("mongoDB connection string is not set"))
-		}
-		fmt.Printf("Connection string: %s\n", s.Config.GetMongodbConnectionString())
 		panic(err)
 	}
 	s.mongoDisconnect = disconnect
 	s.cleanupDatabase()
-}
-
-func hash(s string) uint32 {
-	h := fnv.New32a()
-	_, err := h.Write([]byte(s))
-	if err != nil {
-		log.Error(nil, err, "unable to generate cluster name")
-	}
-	return h.Sum32()
 }
 
 // TearDownSuite tears down the test suite.
