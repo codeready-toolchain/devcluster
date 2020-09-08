@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/alexeykazakov/devcluster/pkg/server"
-	"github.com/alexeykazakov/devcluster/pkg/static"
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/pkg/server"
+	"github.com/codeready-toolchain/devcluster/pkg/static"
+	"github.com/codeready-toolchain/devcluster/test"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

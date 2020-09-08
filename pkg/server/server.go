@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )

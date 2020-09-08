@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	err "github.com/alexeykazakov/devcluster/pkg/errors"
-	"github.com/alexeykazakov/devcluster/test"
+	err "github.com/codeready-toolchain/devcluster/pkg/errors"
+	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"

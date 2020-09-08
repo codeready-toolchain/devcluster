@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/context"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"

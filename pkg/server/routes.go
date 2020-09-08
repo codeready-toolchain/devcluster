@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/alexeykazakov/devcluster/pkg/auth"
-	"github.com/alexeykazakov/devcluster/pkg/controller"
-	"github.com/alexeykazakov/devcluster/pkg/log"
-	"github.com/alexeykazakov/devcluster/pkg/middleware"
-	"github.com/alexeykazakov/devcluster/pkg/static"
+	"github.com/codeready-toolchain/devcluster/pkg/auth"
+	"github.com/codeready-toolchain/devcluster/pkg/controller"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/middleware"
+	"github.com/codeready-toolchain/devcluster/pkg/static"
 
 	"github.com/gin-gonic/gin"
 	errs "github.com/pkg/errors"

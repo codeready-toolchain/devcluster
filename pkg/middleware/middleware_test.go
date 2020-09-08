@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/middleware"
-	"github.com/alexeykazakov/devcluster/pkg/server"
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/middleware"
+	"github.com/codeready-toolchain/devcluster/pkg/server"
+	"github.com/codeready-toolchain/devcluster/test"
 	"github.com/codeready-toolchain/toolchain-common/pkg/status"
 	authsupport "github.com/codeready-toolchain/toolchain-common/pkg/test/auth"
 

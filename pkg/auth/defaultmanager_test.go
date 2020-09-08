@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

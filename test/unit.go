@@ -1,8 +1,8 @@
 package test
 
 import (
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"github.com/stretchr/testify/suite"
 )

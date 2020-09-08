@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 	authsupport "github.com/codeready-toolchain/toolchain-common/pkg/test/auth"
 
 	"gopkg.in/square/go-jose.v2"

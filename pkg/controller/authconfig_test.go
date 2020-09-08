@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

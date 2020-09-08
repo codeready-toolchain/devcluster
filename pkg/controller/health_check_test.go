@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/controller"
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/controller"
+	"github.com/codeready-toolchain/devcluster/test"
 	"github.com/codeready-toolchain/toolchain-common/pkg/status"
 
 	"github.com/gin-gonic/gin"

@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/mongodb"
+	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 
-	"github.com/alexeykazakov/devcluster/pkg/cluster"
+	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/log"
-	"github.com/alexeykazakov/devcluster/pkg/server"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/server"
 )
 
 func main() {

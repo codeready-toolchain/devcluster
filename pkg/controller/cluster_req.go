@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/alexeykazakov/devcluster/pkg/context"
+	"github.com/codeready-toolchain/devcluster/pkg/context"
 
-	"github.com/alexeykazakov/devcluster/pkg/cluster"
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/errors"
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/cluster"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/errors"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"github.com/gin-gonic/gin"
 )

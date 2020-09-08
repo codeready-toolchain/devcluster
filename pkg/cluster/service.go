@@ -5,8 +5,8 @@ import (
 	"hash/fnv"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/ibmcloud"
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"

@@ -3,8 +3,8 @@ package server_test
 import (
 	"testing"
 
-	"github.com/alexeykazakov/devcluster/pkg/server"
-	"github.com/alexeykazakov/devcluster/test"
+	"github.com/codeready-toolchain/devcluster/pkg/server"
+	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

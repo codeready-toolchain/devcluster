@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 

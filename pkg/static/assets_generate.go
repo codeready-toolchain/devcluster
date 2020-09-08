@@ -3,8 +3,8 @@
 package main
 
 import (
-	"github.com/alexeykazakov/devcluster/pkg/log"
-	"github.com/alexeykazakov/devcluster/pkg/static"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/static"
 
 	"github.com/shurcooL/vfsgen"
 )

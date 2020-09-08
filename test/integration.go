@@ -6,9 +6,9 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
-	"github.com/alexeykazakov/devcluster/pkg/log"
-	"github.com/alexeykazakov/devcluster/pkg/mongodb"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 
 	"github.com/stretchr/testify/suite"
 )

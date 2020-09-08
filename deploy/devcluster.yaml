@@ -132,7 +132,7 @@ parameters:
   - name: NAMESPACE
     value: 'devcluster'
   - name: IMAGE
-    value: quay.io/alexeykazakov/devcluster:latest
+    value: quay.io/codeready-toolchain/devcluster:latest
   - name: REPLICAS
     value: '1'
   - name: ENVIRONMENT

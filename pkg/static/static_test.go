@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/alexeykazakov/devcluster/pkg/static"
+	"github.com/codeready-toolchain/devcluster/pkg/static"
 )
 
 func TestStatic(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/alexeykazakov/devcluster/pkg/auth"
-	"github.com/alexeykazakov/devcluster/pkg/context"
+	"github.com/codeready-toolchain/devcluster/pkg/auth"
+	"github.com/codeready-toolchain/devcluster/pkg/context"
 
 	"github.com/gin-gonic/gin"
 )

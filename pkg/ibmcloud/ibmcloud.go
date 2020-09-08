@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alexeykazakov/devcluster/pkg/rest"
+	"github.com/codeready-toolchain/devcluster/pkg/rest"
 
 	"github.com/pkg/errors"
 )

@@ -7,7 +7,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/alexeykazakov/devcluster/pkg/ibmcloud"
+	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 )
 
 type MockIBMCloudClient struct {

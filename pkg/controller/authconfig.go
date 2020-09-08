@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	"github.com/alexeykazakov/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/gin-gonic/gin"
 )
 

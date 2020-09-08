@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/alexeykazakov/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/log"
 
-	"github.com/alexeykazakov/devcluster/pkg/mongodb"
+	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
