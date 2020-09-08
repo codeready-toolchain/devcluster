@@ -1,0 +1,20 @@
+dist: "trusty"
+
+language: go
+
+env:
+  - GO111MODULE=on
+
+git:
+  depth: false
+
+branches:
+  only:
+    - master
+
+go:
+  - 1.14.x
+
+script:
+  - make build && make test
+
