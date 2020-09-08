@@ -36,6 +36,11 @@ jobs:
     - name: Unit Tests
       run: make test
 
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.3.0
+      with:
+        mongodb-version: 4.2
+
     - name: Integration Tests
       env:
         DEVCLUSTER_MONGODB_CONNECTION_STRING: "${{ secrets.DEVCLUSTER_MONGODB_CONNECTION_STRING }}"
