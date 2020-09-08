@@ -43,5 +43,6 @@ jobs:
 
     - name: Integration Tests
       env:
-        DEVCLUSTER_MONGODB_CONNECTION_STRING: "${{ secrets.DEVCLUSTER_MONGODB_CONNECTION_STRING }}"
+        DEVCLUSTER_MONGODB_CONNECTION_STRING: mongodb://localhost:27017/devcluster-test?retryWrites=true&w=majority
       run: make test-integration
+
