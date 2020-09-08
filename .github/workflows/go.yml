@@ -39,5 +39,4 @@ jobs:
     - name: Integration Tests
       env:
         DEVCLUSTER_MONGODB_CONNECTION_STRING: "${{ secrets.DEVCLUSTER_MONGODB_CONNECTION_STRING }}"
-
       run: make test-integration

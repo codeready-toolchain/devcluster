@@ -45,6 +45,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Config.GetViperInstance().Set("mongodb.database", dbname)
 	disconnect, err := mongodb.InitDefaultClient(s.Config)
 	if err != nil {
+		fmt.Printf("Connection string:" + s.Config.GetMongodbConnectionString())
 		panic(err)
 	}
 	s.mongoDisconnect = disconnect
