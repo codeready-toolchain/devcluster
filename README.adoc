@@ -44,6 +44,8 @@ The resulting binare *does not use bundled assets* but reads static content dire
 
 ==== Unit Tests
 
+Test
+
 Run the unit tests by executing:
 
 ```
