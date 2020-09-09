@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -8,7 +10,7 @@ import (
 
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
-	"github.com/codeready-toolchain/devcluster/pkg/errors"
+	devclustererrors "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,7 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	n, err := strconv.Atoi(ns)
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters; number of clusters param is missing or invalid")
-		errors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting clusters; number of clusters param is missing or invalid")
+		devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting clusters; number of clusters param is missing or invalid")
 		return
 	}
 
@@ -40,7 +42,7 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	req, err := cluster.DefaultClusterService.CreateNewRequest(ctx.GetString(context.UsernameKey), n)
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters")
-		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")
 	}
 	ctx.JSON(http.StatusAccepted, req)
 }
@@ -50,17 +52,23 @@ func (r *ClusterRequest) GetHandler(ctx *gin.Context) {
 	reqs, err := cluster.DefaultClusterService.Requests()
 	if err != nil {
 		log.Error(ctx, err, "error fetching cluster requests")
-		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster requests")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster requests")
 	}
 	ctx.JSON(http.StatusOK, reqs)
 }
 
 // GetHandlerClusterReq returns ClusterRequest resource
 func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
-	req, err := cluster.DefaultClusterService.GetRequestWithClusters(ctx.Param("id"))
+	reqID := ctx.Param("id")
+	req, err := cluster.DefaultClusterService.GetRequestWithClusters(reqID)
 	if err != nil {
 		log.Error(ctx, err, "error fetching cluster request")
-		errors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster request")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster request")
+	}
+	if req == nil { // Not Found
+		err = errors.New(fmt.Sprintf("request with id=%s not found", reqID))
+		log.Error(ctx, err, "request not found")
+		devclustererrors.AbortWithError(ctx, http.StatusNotFound, err, "request not found")
 	}
 	ctx.JSON(http.StatusOK, req)
 }

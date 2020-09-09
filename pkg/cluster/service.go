@@ -42,11 +42,13 @@ var DefaultClusterService *ClusterService
 // ClusterService represents a registry of all cluster resources
 type ClusterService struct {
 	IbmCloudClient ibmcloud.ICClient
+	Config         ibmcloud.Configuration
 }
 
 func InitDefaultClusterService(config ibmcloud.Configuration) {
 	DefaultClusterService = &ClusterService{
 		IbmCloudClient: ibmcloud.NewClient(config),
+		Config:         config,
 	}
 }
 
@@ -186,7 +188,7 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 			if err != nil {
 				return err
 			}
-			// Do not exist. Try again in 30 seconds.
+			// Do not exist. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 		} else {
 			clusterToAdd := convertCluster(*c, r.ID)
 			err := replaceCluster(clusterToAdd)
@@ -202,7 +204,7 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 				break
 			}
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(s.Config.GetIBMCloudApiCallRetrySec()) * time.Second)
 	}
 	return nil
 }

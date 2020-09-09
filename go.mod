@@ -23,6 +23,7 @@ require (
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gotest.tools v2.2.0+incompatible
+	k8s.io/apimachinery v0.18.3
 	sigs.k8s.io/controller-runtime v0.6.0
 )
 
