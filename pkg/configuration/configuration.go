@@ -95,7 +95,9 @@ const (
 	// DefaultNamespace is the default k8s namespace to use.
 	DefaultNamespace = "devcluster"
 
-	varIBMCloudAPIKey = "ibmcloud.apikey"
+	varIBMCloudAPIKey             = "ibmcloud.apikey"
+	varIBMCloudApiCallRetrySec    = "ibmcloud.api_call_retry_sec"
+	DefaultBMCloudApiCallRetrySec = 30
 
 	varMongodbConnectionString = "mongodb.connection_string"
 	varMongodbDatabase         = "mongodb.database"
@@ -144,6 +146,7 @@ func (c *Config) setConfigDefaults() {
 	c.v.SetDefault(varAuthClientPublicKeysURL, DefaultAuthClientPublicKeysURL)
 	c.v.SetDefault(varNamespace, DefaultNamespace)
 	c.v.SetDefault(varMongodbDatabase, DefaultMongodbDatabase)
+	c.v.SetDefault(varIBMCloudApiCallRetrySec, DefaultBMCloudApiCallRetrySec)
 }
 
 // GetHTTPAddress returns the HTTP address (as set via default, config file, or
@@ -223,6 +226,11 @@ func (c *Config) GetAuthClientConfigAuthRaw() string {
 // or environment variable).
 func (c *Config) GetAuthClientPublicKeysURL() string {
 	return c.v.GetString(varAuthClientPublicKeysURL)
+}
+
+// GetIBMCloudApiCallRetrySec returns the number of seconds to wait between retrying calling IBM API
+func (c *Config) GetIBMCloudApiCallRetrySec() int {
+	return c.v.GetInt(varIBMCloudApiCallRetrySec)
 }
 
 // GetNamespace returns the namespace in which the devcluster service and host operator is running

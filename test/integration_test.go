@@ -2,17 +2,18 @@ package test
 
 import (
 	"fmt"
-	"sync"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
-
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
+	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type TestIntegrationSuite struct {
@@ -34,14 +35,21 @@ func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int
 
 func (s *TestIntegrationSuite) TestRequestService() {
 	mockClient := NewMockIBMCloudClient()
-	service := &cluster.ClusterService{IbmCloudClient: mockClient}
+	service := &cluster.ClusterService{
+		IbmCloudClient: mockClient,
+		Config: &MockConfig{
+			config: s.Config,
+		},
+	}
 
-	request1 := s.newRequest(service, 10)
-	request2 := s.newRequest(service, 10)
+	request1 := s.newRequest(service, numberOfClustersPerReq)
+	request2 := s.newRequest(service, numberOfClustersPerReq)
 
 	s.Run("request is provisioning", func() {
-		s.waitForClustersToStartProvisioning(service, request1)
-		s.waitForClustersToStartProvisioning(service, request2)
+		err := waitForClustersToStartProvisioning(service, request1)
+		require.NoError(s.T(), err)
+		err = waitForClustersToStartProvisioning(service, request2)
+		require.NoError(s.T(), err)
 
 		s.Run("provisioned", func() {
 			// Update all clusters as provisioned in the mock client
@@ -51,88 +59,92 @@ func (s *TestIntegrationSuite) TestRequestService() {
 				err := mockClient.UpdateCluster(ibmcloud.Cluster{
 					ID:      c.ID,
 					State:   "normal",
-					Ingress: ibmcloud.Ingress{Hostname: fmt.Sprintf("https://console.%s", c.Name)},
+					Ingress: ibmcloud.Ingress{Hostname: fmt.Sprintf("prefix-%s", c.Name)},
 				})
 				require.NoError(s.T(), err)
 			}
 
 			// Check that the request is now also returned as provisioned
-			s.waitForClustersToGetProvisioned(service, request1)
+			err = waitForClustersToGetProvisioned(service, request1)
+			require.NoError(s.T(), err)
 		})
 	})
 }
 
-func (s *TestIntegrationSuite) waitForClustersToStartProvisioning(service *cluster.ClusterService, request cluster.Request) {
-	waitFor(func() bool {
+var retryInterval = 100 * time.Millisecond
+var timeout = 5 * time.Second
+var numberOfClustersPerReq = 10
+
+func waitForClustersToStartProvisioning(service *cluster.ClusterService, request cluster.Request) error {
+	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+		fmt.Println("Wait for clusters to start provisioning")
 		r, err := service.GetRequestWithClusters(request.ID)
-		require.NoError(s.T(), err)
-		if len(r.Clusters) != 10 {
-			return false
+		if err != nil {
+			return false, err
+		}
+		if r == nil {
+			fmt.Println("Request not found")
+			return false, nil
+		}
+		if len(r.Clusters) != numberOfClustersPerReq {
+			fmt.Printf("Number of clusters in Request: %d\n", len(r.Clusters))
+			return false, nil
 		}
 		for _, c := range r.Clusters {
-			assert.Equal(s.T(), "deploying", c.Status)
-			assert.Equal(s.T(), request.ID, c.RequestID)
-			assert.Equal(s.T(), "", c.Error)
-			assert.Equal(s.T(), "", c.URL)
-			assert.Contains(s.T(), c.Name, "redhat-")
+			ok := c.Status == "deploying" &&
+				c.RequestID == request.ID &&
+				c.Error == "" &&
+				c.URL == "" &&
+				strings.Contains(c.Name, "redhat-")
+			if !ok {
+				fmt.Printf("Found clusters: %v\n", r.Clusters)
+				return false, nil
+			}
 		}
-		return true
-	}, time.Second)
+		return true, nil
+	})
+	return err
 }
 
-func (s *TestIntegrationSuite) waitForClustersToGetProvisioned(service *cluster.ClusterService, request cluster.Request) {
-	waitFor(func() bool {
+func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cluster.Request) error {
+	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+		fmt.Println("Wait for clusters to get provisioned")
 		r, err := service.GetRequestWithClusters(request.ID)
-		require.NoError(s.T(), err)
-		if r.Status != "ready" || len(r.Clusters) != 10 {
-			return false
+		if err != nil {
+			return false, err
+		}
+		if r == nil {
+			fmt.Println("Request not found")
+			return false, nil
+		}
+		if r.Status != "ready" || len(r.Clusters) != numberOfClustersPerReq {
+			fmt.Printf("Found request: %v\n", r)
+			return false, nil
 		}
 		for _, c := range r.Clusters {
-			assert.Equal(s.T(), "normal", c.Status)
-			assert.Equal(s.T(), request.ID, c.RequestID)
-			assert.Equal(s.T(), "", c.Error)
-			assert.Equal(s.T(), fmt.Sprintf("https://console.%s", c.Name), c.URL)
-			assert.Contains(s.T(), c.Name, "redhat-")
+			ok := c.Status == "normal" &&
+				c.RequestID == request.ID &&
+				c.Error == "" &&
+				c.URL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
+				strings.Contains(c.Name, "redhat-")
+			if !ok {
+				fmt.Printf("Found clusters: %v\n", r.Clusters)
+				return false, nil
+			}
 		}
-		return true
-	}, time.Second)
+		return true, nil
+	})
+	return err
 }
 
-func worker(f func() bool, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for {
-		if f() {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+type MockConfig struct {
+	config *configuration.Config
 }
 
-func waitFor(f func() bool, timeout time.Duration) {
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go worker(f, &wg)
-
-	fmt.Printf("Wait for waitgroup (up to %s)\n", timeout)
-	if waitTimeout(&wg, timeout) {
-		fmt.Println("Timed out waiting for wait group")
-	} else {
-		fmt.Println("Wait group finished")
-	}
+func (c *MockConfig) GetIBMCloudAPIKey() string {
+	return c.config.GetIBMCloudAPIKey()
 }
 
-// waitTimeout waits for the waitgroup for the specified max timeout.
-// Returns true if waiting timed out.
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false // completed normally
-	case <-time.After(timeout):
-		return true // timed out
-	}
+func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
+	return 1
 }

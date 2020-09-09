@@ -18,6 +18,7 @@ import (
 
 type Configuration interface {
 	GetIBMCloudAPIKey() string
+	GetIBMCloudApiCallRetrySec() int
 }
 
 type ICClient interface {

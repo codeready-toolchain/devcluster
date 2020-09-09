@@ -113,3 +113,7 @@ type MockConfig struct {
 func (c *MockConfig) GetIBMCloudAPIKey() string {
 	return "secretkey"
 }
+
+func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
+	return 1
+}
