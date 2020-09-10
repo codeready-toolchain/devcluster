@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/codeready-toolchain/devcluster/pkg/errors"
+
 	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"gopkg.in/h2non/gock.v1"
@@ -70,6 +72,21 @@ func TestGetCluster(t *testing.T) {
 			ID:   "some-id",
 		}, cluster)
 	})
+
+	t.Run("Not Found", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get("global/v2/getCluster").
+			MatchParam("cluster", "some-id").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(404)
+
+		_, err := cl.GetCluster("some-id")
+		require.Error(t, err)
+		assert.Equal(t, errors.NewNotFoundError("cluster some-id not found", ""), err)
+	})
 }
 
 func TestCreateCluster(t *testing.T) {
@@ -117,6 +134,24 @@ func TestCreateCluster(t *testing.T) {
 		id, err := cl.CreateCluster("john", "zone-1")
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
+	})
+}
+
+func TestDeleteCluster(t *testing.T) {
+	log.Init("devcluster-testing")
+	cl := newClient(t)
+	t.Run("OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Delete("/global/v1/clusters/some-id").
+			MatchParam("deleteResources", "true").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(204)
+
+		err := cl.DeleteCluster("some-id")
+		require.NoError(t, err)
 	})
 }
 

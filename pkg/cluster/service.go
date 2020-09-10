@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"time"
 
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
 
@@ -16,7 +17,7 @@ import (
 type Request struct {
 	ID          string
 	Requested   int // Number of clusters requested
-	Created     string
+	Created     int64
 	Status      string
 	Error       string
 	RequestedBy string
@@ -85,7 +86,7 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 	r := Request{
 		ID:          uuid.NewV4().String(),
 		Requested:   n,
-		Created:     time.Now().String(),
+		Created:     time.Now().Unix(),
 		Status:      "provisioning",
 		RequestedBy: requestedBy,
 		Zone:        zone,
@@ -105,6 +106,21 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 	}
 
 	return r, nil
+}
+
+// DeleteCluster deletes the cluster with the given ID
+func (s *ClusterService) DeleteCluster(id string) error {
+	err := s.IbmCloudClient.DeleteCluster(id)
+	if err != nil {
+		return err
+	}
+	c, err := getCluster(id)
+	if err != nil {
+		return err
+	}
+	c.Error = ""
+	c.Status = "deleted"
+	return replaceCluster(*c)
 }
 
 // ResumeProvisioningRequests load requests that are still provisioning and wait for their clusters to be ready to update the status
@@ -190,7 +206,10 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 		c, err := s.IbmCloudClient.GetCluster(clusterID)
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")
-			err := clusterFailed(err, clusterID, clusterName, r.ID)
+			if devclustererr.IsNotFound(err) {
+				return clusterFailed(err, "deleted", clusterID, clusterName, r.ID)
+			}
+			err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
 			if err != nil {
 				return err
 			}
@@ -224,7 +243,7 @@ func clusterProvisioningPending(c Cluster) bool {
 	return !clusterReady(c) && c.Status != "failed" && c.Status != "deleted"
 }
 
-func clusterFailed(clErr error, id, name, reqID string) error {
+func clusterFailed(clErr error, status, id, name, reqID string) error {
 	clToUpdate, err := getCluster(id)
 	if err != nil {
 		return err
@@ -237,7 +256,7 @@ func clusterFailed(clErr error, id, name, reqID string) error {
 		}
 	}
 	clToUpdate.Error = clErr.Error()
-	clToUpdate.Status = "failed"
+	clToUpdate.Status = status
 	return replaceCluster(*clToUpdate)
 }
 

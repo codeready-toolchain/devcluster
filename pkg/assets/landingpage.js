@@ -181,7 +181,8 @@ function updateClusterRequests() {
       var content = "";
       for(var i = 0; i < data.length; i++) {
         var req = data[i];
-        content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + req.Created + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td></tr>";
+        var created = new Date(req.Created * 1000)
+        content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + created.toString() + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td></tr>";
       }
       document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>Requested by</th><th>Status</th></tr>" + content + "</table>";
     }
@@ -207,8 +208,9 @@ function showClusterRequest(reqID) {
   getClusterRequest(reqID, function(data) {
     show('cluster-request-details')
     // Display the request details
+    var created = new Date(data.Created * 1000)
     var content = "ID: "+ data.ID + "<br/>" +
-        "Created: " + data.Created + "<br/>" +
+        "Created: " + created.toString() + "<br/>" +
         "# of Clusters: " + data.Requested + "<br/>" +
         "Requested by: " + data.RequestedBy + "<br/>" +
         "Status: " + data.Status + "<br/>" +

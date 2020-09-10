@@ -164,7 +164,7 @@ func convertBSONToRequest(m bson.M) Request {
 	return Request{
 		ID:          string(fmt.Sprintf("%v", m["_id"])),
 		RequestedBy: string(fmt.Sprintf("%v", m["requested_by"])),
-		Created:     string(fmt.Sprintf("%v", m["created"])),
+		Created:     int64(m["created"].(int64)),
 		Error:       string(fmt.Sprintf("%v", m["error"])),
 		Requested:   int(m["requested"].(int32)),
 		Status:      string(fmt.Sprintf("%v", m["status"])),

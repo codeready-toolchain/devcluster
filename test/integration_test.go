@@ -115,6 +115,47 @@ func (s *TestIntegrationSuite) TestRequestService() {
 		assert.NotEmpty(s.T(), zones)
 		assert.Equal(s.T(), expected, zones)
 	})
+
+	s.Run("delete cluster", func() {
+		// Provision some clusters
+		_, serv, req, reqWithClusters := s.provisionClusters(3)
+
+		// Now delete one
+		toDelete := reqWithClusters.Clusters[1]
+		err := service.DeleteCluster(toDelete.ID)
+		require.NoError(s.T(), err)
+
+		// Check the deleted cluster
+		result, err := serv.GetRequestWithClusters(req.ID)
+		require.NoError(s.T(), err)
+		assert.Equal(s.T(), cluster.Cluster{
+			ID:        toDelete.ID,
+			RequestID: req.ID,
+			Name:      toDelete.Name,
+			URL:       toDelete.URL,
+			Status:    "deleted",
+			Error:     "",
+		}, result.Clusters[1])
+	})
+}
+
+func (s *TestIntegrationSuite) provisionClusters(n int) (*MockIBMCloudClient, *cluster.ClusterService, cluster.Request, cluster.RequestWithClusters) {
+	mockClient := NewMockIBMCloudClient()
+	service := &cluster.ClusterService{
+		IbmCloudClient: mockClient,
+		Config: &MockConfig{
+			config: s.Config,
+		},
+	}
+
+	req := s.newRequest(service, n)
+	_, err := waitForClustersToStartProvisioning(service, req)
+	require.NoError(s.T(), err)
+	s.markClustersAsProvisioned(service, mockClient, req)
+	r, err := waitForClustersToGetProvisioned(service, req)
+	require.NoError(s.T(), err)
+
+	return mockClient, service, req, r
 }
 
 func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.ClusterService, client *MockIBMCloudClient, request cluster.Request) {
@@ -156,6 +197,9 @@ func waitForClustersToStartProvisioning(service *cluster.ClusterService, request
 		if r.RequestedBy != request.RequestedBy {
 			return false, errors.New("requestedBy doesn't match")
 		}
+		if r.Created < 1 && r.Created > time.Now().Unix() {
+			return false, errors.New("invalid created time")
+		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "deploying" &&
 				c.RequestID == request.ID &&
@@ -194,6 +238,9 @@ func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cl
 		}
 		if r.RequestedBy != request.RequestedBy {
 			return false, errors.New("requestedBy doesn't match")
+		}
+		if r.Created < 1 && r.Created > time.Now().Unix() {
+			return false, errors.New("invalid created time")
 		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "normal" &&

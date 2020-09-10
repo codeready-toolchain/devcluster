@@ -89,3 +89,14 @@ func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, zones)
 }
+
+// DeleteHandlerCluster deletes Cluster resource
+func (r *ClusterRequest) DeleteHandlerCluster(ctx *gin.Context) {
+	id := ctx.Param("id")
+	err := cluster.DefaultClusterService.DeleteCluster(id)
+	if err != nil {
+		log.Error(ctx, err, "error deleting cluster")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error deleting cluster")
+	}
+	ctx.JSON(http.StatusOK, id)
+}

@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,4 +22,22 @@ func AbortWithError(ctx *gin.Context, code int, err error, details string) {
 		Message: err.Error(),
 		Details: details,
 	})
+}
+
+func NewNotFoundError(message, details string) *Error {
+	return &Error{
+		Status:  http.StatusText(http.StatusNotFound),
+		Code:    http.StatusNotFound,
+		Message: message,
+		Details: details,
+	}
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("%d %s %s: %s", e.Code, e.Status, e.Message, e.Details)
+}
+
+func IsNotFound(err error) bool {
+	e, ok := err.(Error)
+	return ok && e.Code == http.StatusNotFound
 }

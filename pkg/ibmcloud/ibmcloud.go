@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
-
 	"github.com/codeready-toolchain/devcluster/pkg/rest"
 
 	"github.com/pkg/errors"
@@ -29,6 +29,7 @@ type ICClient interface {
 	GetZones() ([]Location, error)
 	CreateCluster(name, zone string) (string, error)
 	GetCluster(id string) (*Cluster, error)
+	DeleteCluster(id string) error
 }
 
 type Client struct {
@@ -180,7 +181,7 @@ const ClusterConfigTemplate = `
   "publicVlan": "%s",
   "privateVlan": "%s",
   "workerNum": 2
-}`
+}` //"noSubnet": true,
 
 // CreateCluster creates a cluster
 // Returns the cluster ID
@@ -265,6 +266,9 @@ func (c *Client) GetCluster(id string) (*Cluster, error) {
 	}
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode == http.StatusNotFound {
+		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
+	}
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("unable to get cluster. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
@@ -275,6 +279,29 @@ func (c *Client) GetCluster(id string) (*Cluster, error) {
 		return nil, errors.Wrapf(err, "error when unmarshal json with cluster %s ", bodyString)
 	}
 	return &cluster, nil
+}
+
+// DeleteCluster deletes the cluster with the given ID/name
+func (c *Client) DeleteCluster(id string) error {
+	token, err := c.Token()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://containers.cloud.ibm.com/global/v1/clusters/%s?deleteResources=true", id), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to delete cluster")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusNoContent {
+		return errors.Errorf("unable to delete cluster. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+	return nil
 }
 
 // obtainNewToken obtains an access token
@@ -316,7 +343,10 @@ type TokenSet struct {
 // readTokenSet extracts json with token data from the response
 func readTokenSet(res *http.Response) (*TokenSet, error) {
 	buf := new(bytes.Buffer)
-	io.Copy(buf, res.Body)
+	_, err := io.Copy(buf, res.Body)
+	if err != nil {
+		return nil, err
+	}
 	jsonString := strings.TrimSpace(buf.String())
 	return readTokenSetFromJson(jsonString)
 }

@@ -68,6 +68,17 @@ func (c *MockIBMCloudClient) GetCluster(id string) (*ibmcloud.Cluster, error) {
 	return c.clustersByID[id], nil
 }
 
+func (c *MockIBMCloudClient) DeleteCluster(id string) error {
+	defer c.mux.Unlock()
+	c.mux.Lock()
+	cluster := c.clustersByID[id]
+	if cluster != nil {
+		c.clustersByID[id] = nil
+		c.clustersByName[cluster.Name] = nil
+	}
+	return nil
+}
+
 func (c *MockIBMCloudClient) UpdateCluster(cluster ibmcloud.Cluster) error {
 	defer c.mux.Unlock()
 	c.mux.Lock()
