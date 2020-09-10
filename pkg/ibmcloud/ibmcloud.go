@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -158,6 +159,10 @@ func (c *Client) GetZones() ([]Location, error) {
 			zones = append(zones, z)
 		}
 	}
+	// Sort by Display Name
+	sort.SliceStable(zones, func(i, j int) bool {
+		return zones[i].DisplayName < zones[j].DisplayName
+	})
 	return zones, nil
 }
 

@@ -146,7 +146,11 @@ function updateZones() {
       var content = "";
       for(var i = 0; i < data.length; i++) {
         var zone = data[i];
-        content = content + "<option value=\"" + zone.id + "\">" + zone.display_name + "</option>";
+        var selected = ""
+        if (zone.id === "wdc04") {
+          selected = "selected"
+        }
+        content = content + "<option value=\"" + zone.id + "\" " + selected + ">" + zone.display_name + "</option>";
       }
       document.getElementById('zones').innerHTML = content;
     }
@@ -243,7 +247,8 @@ function login() {
 // request cluster provisioning
 function requestClusters() {
   var n = document.getElementById("number-of-clusters").value;
-  getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n, function(err, data) {
+  var zone = document.getElementById("zones").value;
+  getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n + "&zone=" + zone, function(err, data) {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));
     } else {

@@ -26,18 +26,19 @@ func TestGetZones(t *testing.T) {
 			Persist().
 			Reply(200).
 			BodyString(`[
+{"id":"sng01","name": "sng01","kind": "dc","display_name": "Singapore 01"},
 {"id":"lon06","name": "lon06","kind": "dc","display_name": "London 06"},
-{"id":"hou","name": "hou","kind": "metro","geography": "na","display_name": "Houston"},
-{"id":"sng01","name": "sng01","kind": "dc","display_name": "Singapore 01"}]`)
+{"id":"hou","name": "hou","kind": "metro","geography": "na","display_name": "Houston"}]`)
 
 		zones, err := cl.GetZones()
 		require.NoError(t, err)
-		assert.Equal(t, []Location{{
-			ID:          "lon06",
-			Name:        "lon06",
-			Kind:        "dc",
-			DisplayName: "London 06",
-		},
+		assert.Equal(t, []Location{
+			{
+				ID:          "lon06",
+				Name:        "lon06",
+				Kind:        "dc",
+				DisplayName: "London 06",
+			},
 			{
 				ID:          "sng01",
 				Name:        "sng01",
