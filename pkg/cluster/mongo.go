@@ -160,17 +160,6 @@ func getClusters(requestID string) ([]Cluster, error) {
 	return clusters, err
 }
 
-func convertBSONToCluster(m bson.M) Cluster {
-	return Cluster{
-		ID:        string(fmt.Sprintf("%v", m["_id"])),
-		RequestID: string(fmt.Sprintf("%v", m["request_id"])),
-		URL:       string(fmt.Sprintf("%v", m["url"])),
-		Error:     string(fmt.Sprintf("%v", m["error"])),
-		Name:      string(fmt.Sprintf("%v", m["name"])),
-		Status:    string(fmt.Sprintf("%v", m["status"])),
-	}
-}
-
 func convertBSONToRequest(m bson.M) Request {
 	return Request{
 		ID:          string(fmt.Sprintf("%v", m["_id"])),
@@ -179,6 +168,7 @@ func convertBSONToRequest(m bson.M) Request {
 		Error:       string(fmt.Sprintf("%v", m["error"])),
 		Requested:   int(m["requested"].(int32)),
 		Status:      string(fmt.Sprintf("%v", m["status"])),
+		Zone:        string(fmt.Sprintf("%v", m["zone"])),
 	}
 }
 
@@ -190,6 +180,18 @@ func convertClusterRequestToBSON(req Request) bson.D {
 		{"error", req.Error},
 		{"created", req.Created},
 		{"requested_by", req.RequestedBy},
+		{"zone", req.Zone},
+	}
+}
+
+func convertBSONToCluster(m bson.M) Cluster {
+	return Cluster{
+		ID:        string(fmt.Sprintf("%v", m["_id"])),
+		RequestID: string(fmt.Sprintf("%v", m["request_id"])),
+		URL:       string(fmt.Sprintf("%v", m["url"])),
+		Error:     string(fmt.Sprintf("%v", m["error"])),
+		Name:      string(fmt.Sprintf("%v", m["name"])),
+		Status:    string(fmt.Sprintf("%v", m["status"])),
 	}
 }
 

@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -29,11 +30,12 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n)
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "dal10")
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)
 	assert.Equal(s.T(), "provisioning", req.Status)
+	assert.Equal(s.T(), "dal10", req.Zone)
 	return req
 }
 
@@ -46,8 +48,8 @@ func (s *TestIntegrationSuite) TestRequestService() {
 		},
 	}
 
-	request1 := s.newRequest(service, numberOfClustersPerReq)
-	request2 := s.newRequest(service, numberOfClustersPerReq)
+	request1 := s.newRequest(service, 10)
+	request2 := s.newRequest(service, 10)
 
 	s.Run("request is provisioning", func() {
 		reqWithClusters1, err := waitForClustersToStartProvisioning(service, request1)
@@ -104,6 +106,15 @@ func (s *TestIntegrationSuite) TestRequestService() {
 			})
 		})
 	})
+
+	s.Run("get zones", func() {
+		zones, err := service.GetZones()
+		require.NoError(s.T(), err)
+		expected, err := service.IbmCloudClient.GetZones()
+		require.NoError(s.T(), err)
+		assert.NotEmpty(s.T(), zones)
+		assert.Equal(s.T(), expected, zones)
+	})
 }
 
 func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.ClusterService, client *MockIBMCloudClient, request cluster.Request) {
@@ -122,7 +133,6 @@ func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.Cluste
 
 var retryInterval = 100 * time.Millisecond
 var timeout = 5 * time.Second
-var numberOfClustersPerReq = 10
 
 func waitForClustersToStartProvisioning(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
 	var req cluster.RequestWithClusters
@@ -136,9 +146,15 @@ func waitForClustersToStartProvisioning(service *cluster.ClusterService, request
 			fmt.Println("Request not found")
 			return false, nil
 		}
-		if len(r.Clusters) != numberOfClustersPerReq {
+		if len(r.Clusters) != request.Requested {
 			fmt.Printf("Number of clusters in Request: %d\n", len(r.Clusters))
 			return false, nil
+		}
+		if r.Zone != request.Zone {
+			return false, errors.New("zone doesn't match")
+		}
+		if r.RequestedBy != request.RequestedBy {
+			return false, errors.New("requestedBy doesn't match")
 		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "deploying" &&
@@ -169,9 +185,15 @@ func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cl
 			fmt.Println("Request not found")
 			return false, nil
 		}
-		if r.Status != "ready" || len(r.Clusters) != numberOfClustersPerReq {
+		if r.Status != "ready" || len(r.Clusters) != request.Requested {
 			fmt.Printf("Found request: %v\n", r)
 			return false, nil
+		}
+		if r.Zone != request.Zone {
+			return false, errors.New("zone doesn't match")
+		}
+		if r.RequestedBy != request.RequestedBy {
+			return false, errors.New("requestedBy doesn't match")
 		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "normal" &&

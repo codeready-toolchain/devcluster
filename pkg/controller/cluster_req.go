@@ -38,8 +38,15 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 		return
 	}
 
+	zone := ctx.PostForm("zone")
+	if zone == "" {
+		log.Info(ctx, "WARNING: no zone parameter specified. \"wdc04\" will be used by default to create a new request")
+		zone = "wdc04"
+	}
+
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
-	req, err := cluster.DefaultClusterService.CreateNewRequest(ctx.GetString(context.UsernameKey), n)
+	requestedBy := ctx.GetString(context.UsernameKey)
+	req, err := cluster.DefaultClusterService.CreateNewRequest(requestedBy, n, zone)
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")
@@ -71,4 +78,14 @@ func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
 		devclustererrors.AbortWithError(ctx, http.StatusNotFound, err, "request not found")
 	}
 	ctx.JSON(http.StatusOK, req)
+}
+
+// GetHandlerZones returns Zones resource
+func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
+	zones, err := cluster.DefaultClusterService.GetZones()
+	if err != nil {
+		log.Error(ctx, err, "error fetching zones")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching zones")
+	}
+	ctx.JSON(http.StatusOK, zones)
 }

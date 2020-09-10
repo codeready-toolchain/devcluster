@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+
 	"gopkg.in/h2non/gock.v1"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +14,27 @@ import (
 
 var mockConfig = &MockConfig{}
 
-func TestCreateCluster(t *testing.T) {
+func TestGetZones(t *testing.T) {
+	log.Init("devcluster-testing")
+	cl := newClient(t)
+	t.Run("OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get("global/v1/datacenters").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(200).
+			BodyString(`["zone-1","zone-2"]`)
+
+		zones, err := cl.GetZones()
+		require.NoError(t, err)
+		assert.Equal(t, []string{"zone-1", "zone-2"}, zones)
+	})
+}
+
+func TestGetCluster(t *testing.T) {
+	log.Init("devcluster-testing")
 	cl := newClient(t)
 	t.Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
@@ -34,20 +56,49 @@ func TestCreateCluster(t *testing.T) {
 	})
 }
 
-func TestGetCluster(t *testing.T) {
+func TestCreateCluster(t *testing.T) {
+	log.Init("devcluster-testing")
 	cl := newClient(t)
-	t.Run("OK", func(t *testing.T) {
+	t.Run("Vlan is available", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
+			Get(fmt.Sprintf("global/v1/datacenters/%s/vlans", "zone-1")).
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(200).
+			BodyString(`[{"id":"12345","type": "private"},{"id":"54321","type":"public"}]`)
+		gock.New("https://containers.cloud.ibm.com").
 			Post("global/v1/clusters").
 			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
-			JSON(fmt.Sprintf(ClusterConfigTemplate, "john")).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345")).
 			Persist().
 			Reply(201).
 			BodyString(`{"id": "some-id"}`)
 
-		id, err := cl.CreateCluster("john")
+		id, err := cl.CreateCluster("john", "zone-1")
+		require.NoError(t, err)
+		assert.Equal(t, "some-id", id)
+	})
+
+	t.Run("Vlan is not available", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get(fmt.Sprintf("global/v1/datacenters/%s/vlans", "zone-1")).
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(200).
+			BodyString(`[]`)
+		gock.New("https://containers.cloud.ibm.com").
+			Post("global/v1/clusters").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "", "")).
+			Persist().
+			Reply(201).
+			BodyString(`{"id": "some-id"}`)
+
+		id, err := cl.CreateCluster("john", "zone-1")
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})

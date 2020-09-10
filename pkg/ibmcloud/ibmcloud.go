@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+
 	"github.com/codeready-toolchain/devcluster/pkg/rest"
 
 	"github.com/pkg/errors"
@@ -22,7 +24,9 @@ type Configuration interface {
 }
 
 type ICClient interface {
-	CreateCluster(name string) (string, error)
+	GetVlans(zone string) ([]Vlan, error)
+	GetZones() ([]string, error)
+	CreateCluster(name, zone string) (string, error)
 	GetCluster(id string) (*Cluster, error)
 }
 
@@ -70,30 +74,118 @@ func tokenExpired(token *TokenSet) bool {
 	return token == nil || time.Now().After(time.Unix(token.Expiration-60, 0))
 }
 
-const ClusterConfigTemplate = `
-{
-  "dataCenter": "wdc04",
-  "disableAutoUpdate": true,
-  "machineType": "b3c.4x16",
-  "masterVersion": "4.4_openshift",
-  "name": "%s",
-  "publicVlan": "2940148",
-  "privateVlan": "2940150",
-  "workerNum": 2
-}`
+type Vlan struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// vlanIDByType returns the vlan ID for the given type. Returns "" if there is no such type.
+func vlanIDByType(vlans []Vlan, t string) string {
+	for _, vlan := range vlans {
+		if vlan.Type == t {
+			return vlan.ID
+		}
+	}
+	return ""
+}
+
+// GetVlans fetches the list of vlans available in the zone
+func (c *Client) GetVlans(zone string) ([]Vlan, error) {
+	token, err := c.Token()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://containers.cloud.ibm.com/global/v1/datacenters/%s/vlans", zone), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get vlans")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unable to get vlans. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var vlans []Vlan
+	err = json.Unmarshal([]byte(bodyString), &vlans)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when unmarshal json with vlans %s ", bodyString)
+	}
+	return vlans, nil
+}
+
+// GetZones fetches the list of zones (data centers)
+func (c *Client) GetZones() ([]string, error) {
+	token, err := c.Token()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", "https://containers.cloud.ibm.com/global/v1/datacenters", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get zones")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unable to get zones. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var zones []string
+	err = json.Unmarshal([]byte(bodyString), &zones)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when unmarshal json with zones %s ", bodyString)
+	}
+	return zones, nil
+}
 
 type ID struct {
 	ID string `json:"id"`
 }
 
+const ClusterConfigTemplate = `
+{
+  "dataCenter": "%s",
+  "disableAutoUpdate": true,
+  "machineType": "b3c.4x16",
+  "masterVersion": "4.4_openshift",
+  "name": "%s",
+  "publicVlan": "%s",
+  "privateVlan": "%s",
+  "workerNum": 2
+}`
+
 // CreateCluster creates a cluster
 // Returns the cluster ID
-func (c *Client) CreateCluster(name string) (string, error) {
+func (c *Client) CreateCluster(name, zone string) (string, error) {
 	token, err := c.Token()
 	if err != nil {
 		return "", err
 	}
-	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, name)))
+
+	// Get vlans
+	vlans, err := c.GetVlans(zone)
+	if err != nil {
+		return "", err
+	}
+	private := vlanIDByType(vlans, "private")
+	if private == "" {
+		log.Infof(nil, "WARNING: no private vlan found for zone %s. New vlan will be created", zone)
+	}
+	public := vlanIDByType(vlans, "public")
+	if public == "" {
+		log.Infof(nil, "WARNING: no public vlan found for zone %s. New vlan will be created", zone)
+	}
+
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, zone, name, public, private)))
 	req, err := http.NewRequest("POST", "https://containers.cloud.ibm.com/global/v1/clusters", body)
 	if err != nil {
 		return "", err

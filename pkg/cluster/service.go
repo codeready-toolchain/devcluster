@@ -20,6 +20,7 @@ type Request struct {
 	Status      string
 	Error       string
 	RequestedBy string
+	Zone        string
 }
 
 // Request represents a cluster request with detailed information about all request clusters
@@ -56,6 +57,10 @@ func (s *ClusterService) Requests() ([]Request, error) {
 	return getAllRequests()
 }
 
+func (s *ClusterService) GetZones() ([]string, error) {
+	return s.IbmCloudClient.GetZones()
+}
+
 func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithClusters, error) {
 	request, err := getRequest(requestID)
 	if err != nil {
@@ -76,13 +81,14 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 }
 
 // CreateNewRequest creates a new request and starts provisioning clusters
-func (s *ClusterService) CreateNewRequest(requestedBy string, n int) (Request, error) {
+func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string) (Request, error) {
 	r := Request{
 		ID:          uuid.NewV4().String(),
 		Requested:   n,
 		Created:     time.Now().String(),
 		Status:      "provisioning",
 		RequestedBy: requestedBy,
+		Zone:        zone,
 	}
 
 	err := insertRequest(r)
@@ -159,7 +165,7 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.
 	for i := 0; i < 6; i++ {
-		id, err = s.IbmCloudClient.CreateCluster(name)
+		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone)
 		if err == nil {
 			break
 		}

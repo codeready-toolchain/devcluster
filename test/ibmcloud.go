@@ -23,7 +23,50 @@ func NewMockIBMCloudClient() *MockIBMCloudClient {
 	}
 }
 
-func (c *MockIBMCloudClient) CreateCluster(name string) (string, error) {
+func (c *MockIBMCloudClient) GetZones() ([]string, error) {
+	return []string{
+		"ams03",
+		"che01",
+		"dal10",
+		"dal12",
+		"dal13",
+		"fra02",
+		"fra04",
+		"fra05",
+		"hkg02",
+		"lon02",
+		"lon04",
+		"lon05",
+		"lon06",
+		"mel01",
+		"mex01",
+		"mil01",
+		"mon01",
+		"osl01",
+		"par01",
+		"sao01",
+		"seo01",
+		"sjc03",
+		"sjc04",
+		"sng01",
+		"syd01",
+		"syd04",
+		"syd05",
+		"tok02",
+		"tok04",
+		"tok05",
+		"tor01",
+		"wdc04",
+		"wdc06",
+		"wdc07",
+	}, nil
+}
+
+func (c *MockIBMCloudClient) GetVlans(zone string) ([]ibmcloud.Vlan, error) {
+	return []ibmcloud.Vlan{}, nil
+}
+
+func (c *MockIBMCloudClient) CreateCluster(name, zone string) (string, error) {
 	defer c.mux.Unlock()
 	c.mux.Lock()
 	if c.clustersByName[name] != nil {
@@ -32,7 +75,7 @@ func (c *MockIBMCloudClient) CreateCluster(name string) (string, error) {
 	newCluster := &ibmcloud.Cluster{
 		ID:          uuid.NewV4().String(),
 		Name:        name,
-		Region:      "dc",
+		Region:      zone,
 		CreatedDate: time.Now().String(),
 		State:       "deploying",
 		Ingress:     ibmcloud.Ingress{},
