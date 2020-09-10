@@ -275,6 +275,7 @@ getJSON('GET', configURL, null, null, function(err, data) {
             updateZones()
             showUser(data.preferred_username)
             hideAll();
+            showRequestForm();
             updateClusterRequests();
           });
         } else {
