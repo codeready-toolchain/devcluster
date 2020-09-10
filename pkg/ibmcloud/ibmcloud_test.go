@@ -21,15 +21,30 @@ func TestGetZones(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
-			Get("global/v1/datacenters").
+			Get("global/v1/locations").
 			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
 			Persist().
 			Reply(200).
-			BodyString(`["zone-1","zone-2"]`)
+			BodyString(`[
+{"id":"lon06","name": "lon06","kind": "dc","display_name": "London 06"},
+{"id":"hou","name": "hou","kind": "metro","geography": "na","display_name": "Houston"},
+{"id":"sng01","name": "sng01","kind": "dc","display_name": "Singapore 01"}]`)
 
 		zones, err := cl.GetZones()
 		require.NoError(t, err)
-		assert.Equal(t, []string{"zone-1", "zone-2"}, zones)
+		assert.Equal(t, []Location{{
+			ID:          "lon06",
+			Name:        "lon06",
+			Kind:        "dc",
+			DisplayName: "London 06",
+		},
+			{
+				ID:          "sng01",
+				Name:        "sng01",
+				Kind:        "dc",
+				DisplayName: "Singapore 01",
+			},
+		}, zones)
 	})
 }
 

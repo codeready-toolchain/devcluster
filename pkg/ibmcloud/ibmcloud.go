@@ -25,7 +25,7 @@ type Configuration interface {
 
 type ICClient interface {
 	GetVlans(zone string) ([]Vlan, error)
-	GetZones() ([]string, error)
+	GetZones() ([]Location, error)
 	CreateCluster(name, zone string) (string, error)
 	GetCluster(id string) (*Cluster, error)
 }
@@ -118,13 +118,20 @@ func (c *Client) GetVlans(zone string) ([]Vlan, error) {
 	return vlans, nil
 }
 
+type Location struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Kind        string `json:"kind"`
+	DisplayName string `json:"display_name"`
+}
+
 // GetZones fetches the list of zones (data centers)
-func (c *Client) GetZones() ([]string, error) {
+func (c *Client) GetZones() ([]Location, error) {
 	token, err := c.Token()
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("GET", "https://containers.cloud.ibm.com/global/v1/datacenters", nil)
+	req, err := http.NewRequest("GET", "https://containers.cloud.ibm.com/global/v1/locations", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +146,17 @@ func (c *Client) GetZones() ([]string, error) {
 		return nil, errors.Errorf("unable to get zones. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
 
-	var zones []string
-	err = json.Unmarshal([]byte(bodyString), &zones)
+	var locations []Location
+	err = json.Unmarshal([]byte(bodyString), &locations)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error when unmarshal json with zones %s ", bodyString)
+	}
+	// Return only locations with kind == "dc" (data center)
+	zones := make([]Location, 0, 0)
+	for _, z := range locations {
+		if z.Kind == "dc" {
+			zones = append(zones, z)
+		}
 	}
 	return zones, nil
 }

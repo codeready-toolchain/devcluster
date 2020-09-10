@@ -23,42 +23,19 @@ func NewMockIBMCloudClient() *MockIBMCloudClient {
 	}
 }
 
-func (c *MockIBMCloudClient) GetZones() ([]string, error) {
-	return []string{
-		"ams03",
-		"che01",
-		"dal10",
-		"dal12",
-		"dal13",
-		"fra02",
-		"fra04",
-		"fra05",
-		"hkg02",
-		"lon02",
-		"lon04",
-		"lon05",
-		"lon06",
-		"mel01",
-		"mex01",
-		"mil01",
-		"mon01",
-		"osl01",
-		"par01",
-		"sao01",
-		"seo01",
-		"sjc03",
-		"sjc04",
-		"sng01",
-		"syd01",
-		"syd04",
-		"syd05",
-		"tok02",
-		"tok04",
-		"tok05",
-		"tor01",
-		"wdc04",
-		"wdc06",
-		"wdc07",
+func (c *MockIBMCloudClient) GetZones() ([]ibmcloud.Location, error) {
+	return []ibmcloud.Location{{
+		ID:          "lon06",
+		Name:        "lon06",
+		Kind:        "dc",
+		DisplayName: "London 06",
+	},
+		{
+			ID:          "sng01",
+			Name:        "sng01",
+			Kind:        "dc",
+			DisplayName: "Singapore 01",
+		},
 	}, nil
 }
 

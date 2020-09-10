@@ -57,6 +57,10 @@ function show(elementId) {
   document.getElementById(elementId).style.display = 'block';
 }
 
+function showRequestForm() {
+  show('state-request-clusters');
+}
+
 function showError(errorText) {
   hideAll();
   show('state-error');
@@ -99,7 +103,18 @@ function loadAuthLibrary(url, cbSuccess, cbError) {
   script.onreadystatechange = loadFunction;
   document.getElementsByTagName('head')[0].appendChild(script);
 }
-      
+
+// gets zones
+function getZones(cbSuccess, cbError) {
+  getJSON('GET', '/api/v1/zones', idToken, null,function(err, data) {
+    if (err != null) {
+      cbError(err, data);
+    } else {
+      cbSuccess(data);
+    }
+  })
+}
+
 // gets the cluster requests once.
 function getClusterRequests(cbSuccess, cbError) {
   getJSON('GET', '/api/v1/cluster-reqs', idToken, null,function(err, data) {
@@ -118,6 +133,37 @@ function getClusterRequest(id, cbSuccess, cbError) {
       cbError(err, data);
     } else {
       cbSuccess(data);
+    }
+  })
+}
+
+// updates the zone list.
+function updateZones() {
+  document.getElementById('zones').innerHTML = "<option value=\"\">Loading...</option>";
+  getZones(function(data) {
+    if (data!=null) {
+      // Show all zones
+      var content = "";
+      for(var i = 0; i < data.length; i++) {
+        var zone = data[i];
+        content = content + "<option value=\"" + zone.id + "\">" + zone.display_name + "</option>";
+      }
+      document.getElementById('zones').innerHTML = content;
+    }
+  }, function(err, data) {
+    if (err === 401) {
+      // user is unauthorized, show login/signup view; stop interval.
+      clearInterval(intervalRef);
+      hideUser();
+      hideAll();
+      show('state-not-logged-in');
+      show('state-error');
+      if(data != null && data.error != null){
+        document.getElementById('errorStatus').textContent = data.error;
+      }
+    } else {
+      // other error, show error box.
+      showError(err);
     }
   })
 }
@@ -226,9 +272,9 @@ getJSON('GET', configURL, null, null, function(err, data) {
         if (authenticated == true) {
           keycloak.loadUserInfo().success(function(data) {
             idToken = keycloak.idToken
+            updateZones()
             showUser(data.preferred_username)
             hideAll();
-            show('state-request-clusters');
             updateClusterRequests();
           });
         } else {

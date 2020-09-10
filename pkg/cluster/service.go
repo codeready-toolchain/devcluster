@@ -57,7 +57,7 @@ func (s *ClusterService) Requests() ([]Request, error) {
 	return getAllRequests()
 }
 
-func (s *ClusterService) GetZones() ([]string, error) {
+func (s *ClusterService) GetZones() ([]ibmcloud.Location, error) {
 	return s.IbmCloudClient.GetZones()
 }
 

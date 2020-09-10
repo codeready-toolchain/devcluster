@@ -30,12 +30,12 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "dal10")
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06")
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)
 	assert.Equal(s.T(), "provisioning", req.Status)
-	assert.Equal(s.T(), "dal10", req.Zone)
+	assert.Equal(s.T(), "lon06", req.Zone)
 	return req
 }
 
