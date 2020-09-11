@@ -7,13 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	err "github.com/codeready-toolchain/devcluster/pkg/errors"
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gotest.tools/assert"
 )
 
 type TestErrorsSuite struct {
@@ -33,9 +33,9 @@ func (s *TestErrorsSuite) TestErrors() {
 		errMsg := "testing new error"
 		code := http.StatusInternalServerError
 
-		err.AbortWithError(ctx, code, errors.New(errMsg), details)
+		devclustererr.AbortWithError(ctx, code, errors.New(errMsg), details)
 
-		res := err.Error{}
+		res := devclustererr.Error{}
 		err := json.Unmarshal(rr.Body.Bytes(), &res)
 		require.NoError(s.T(), err)
 
@@ -43,5 +43,10 @@ func (s *TestErrorsSuite) TestErrors() {
 		assert.Equal(s.T(), res.Details, details)
 		assert.Equal(s.T(), res.Message, errMsg)
 		assert.Equal(s.T(), res.Status, http.StatusText(code))
+	})
+
+	s.Run("IsNotFound", func() {
+		err := devclustererr.NewNotFoundError("some message", "some details")
+		assert.True(s.T(), devclustererr.IsNotFound(err))
 	})
 }

@@ -98,5 +98,5 @@ func (r *ClusterRequest) DeleteHandlerCluster(ctx *gin.Context) {
 		log.Error(ctx, err, "error deleting cluster")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error deleting cluster")
 	}
-	ctx.JSON(http.StatusOK, id)
+	ctx.JSON(http.StatusNoContent, nil)
 }

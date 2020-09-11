@@ -137,6 +137,17 @@ function getClusterRequest(id, cbSuccess, cbError) {
   })
 }
 
+// deletes the cluster.
+function deleteCluster(id, cbSuccess, cbError) {
+  getJSON('DELETE', '/api/v1/cluster/' + id, idToken, null,function(err, data) {
+    if (err != null) {
+      cbError(err, data);
+    } else {
+      cbSuccess(data);
+    }
+  })
+}
+
 // updates the zone list.
 function updateZones() {
   document.getElementById('zones').innerHTML = "<option value=\"\">Loading...</option>";
@@ -215,15 +226,39 @@ function showClusterRequest(reqID) {
         "Requested by: " + data.RequestedBy + "<br/>" +
         "Status: " + data.Status + "<br/>" +
         "Error: " + data.Error + "<br/>" +
-        "<table style=\"width:100%\"><tr><th>ID</th><th>Name</th><th>URL</th><th>Status</th><th>Error</th></tr>";
+        "<table style=\"width:100%\"><tr><th>ID</th><th>Name</th><th>URL</th><th>Status</th><th>Error</th><th></th></tr>";
     for (var key in data.Clusters) {
       if (data.Clusters.hasOwnProperty(key)) {
         var cl = data.Clusters[key];
-        content = content + "<tr><td>" + cl.ID +"</td><td>" + cl.Name + "</td><td>" + cl.URL + "</td><td>" + cl.Status + "</td><td>" + cl.Error + "</td></tr>";
+        var deleteBtn = ""
+        if (cl.Status !== "deleted" && cl.Status !== "deleting") {
+          deleteBtn = "<button class=\"submitbutton\" onclick=\"submitDeleteCluster('" + cl.ID + "')\">Delete</button>"
+        }
+        content = content + "<tr><td>" + cl.ID +"</td><td>" + cl.Name + "</td><td>" + cl.URL + "</td><td>" + cl.Status + "</td><td>" + cl.Error + "</td><td>" + deleteBtn + "</td></tr>";
       }
     }
     content = content + "</table>";
     document.getElementById('cluster-request-details-table').innerHTML = content;
+  }, function(err, data) {
+    if (err === 401) {
+      // user is unauthorized, show login/signup view; stop interval.
+      clearInterval(intervalRef);
+      hideUser();
+      hideAll();
+      show('state-not-logged-in');
+      show('state-error');
+      if(data != null && data.error != null){
+        document.getElementById('errorStatus').textContent = data.error;
+      }
+    } else {
+      // other error, show error box.
+      showError(err);
+    }
+  })
+}
+
+function submitDeleteCluster(clusterID) {
+  deleteCluster(clusterID, function(data) {
   }, function(err, data) {
     if (err === 401) {
       // user is unauthorized, show login/signup view; stop interval.

@@ -180,6 +180,7 @@ const ClusterConfigTemplate = `
   "name": "%s",
   "publicVlan": "%s",
   "privateVlan": "%s",
+  "noSubnet": true,
   "workerNum": 2
 }` //"noSubnet": true,
 
