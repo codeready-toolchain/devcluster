@@ -44,9 +44,17 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 		zone = "wdc04"
 	}
 
+	deleteIns := ctx.PostForm("delete-in-hours")
+	deleteInHours, err := strconv.Atoi(deleteIns)
+	if err != nil {
+		log.Error(ctx, err, "error requesting clusters; delete-in-hours param is missing or invalid")
+		devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting clusters; delete-in-hours param is missing or invalid")
+		return
+	}
+
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
 	requestedBy := ctx.GetString(context.UsernameKey)
-	req, err := cluster.DefaultClusterService.CreateNewRequest(requestedBy, n, zone)
+	req, err := cluster.DefaultClusterService.CreateNewRequest(requestedBy, n, zone, deleteInHours)
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")

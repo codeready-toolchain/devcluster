@@ -30,7 +30,7 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06")
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", 100)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)
@@ -200,6 +200,9 @@ func waitForClustersToStartProvisioning(service *cluster.ClusterService, request
 		if r.Created < 1 && r.Created > time.Now().Unix() {
 			return false, errors.New("invalid created time")
 		}
+		if r.DeleteInHours != request.DeleteInHours {
+			return false, errors.New("deleteInHours doesn't match")
+		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "deploying" &&
 				c.RequestID == request.ID &&
@@ -241,6 +244,9 @@ func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cl
 		}
 		if r.Created < 1 && r.Created > time.Now().Unix() {
 			return false, errors.New("invalid created time")
+		}
+		if r.DeleteInHours != request.DeleteInHours {
+			return false, errors.New("deleteInHours doesn't match")
 		}
 		for _, c := range r.Clusters {
 			ok := c.Status == "normal" &&

@@ -15,13 +15,14 @@ import (
 
 // Request represents a cluster request
 type Request struct {
-	ID          string
-	Requested   int // Number of clusters requested
-	Created     int64
-	Status      string
-	Error       string
-	RequestedBy string
-	Zone        string
+	ID            string
+	Requested     int // Number of clusters requested
+	Created       int64
+	Status        string
+	Error         string
+	RequestedBy   string
+	Zone          string
+	DeleteInHours int
 }
 
 // Request represents a cluster request with detailed information about all request clusters
@@ -82,14 +83,15 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 }
 
 // CreateNewRequest creates a new request and starts provisioning clusters
-func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string) (Request, error) {
+func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string, deleteInHours int) (Request, error) {
 	r := Request{
-		ID:          uuid.NewV4().String(),
-		Requested:   n,
-		Created:     time.Now().Unix(),
-		Status:      "provisioning",
-		RequestedBy: requestedBy,
-		Zone:        zone,
+		ID:            uuid.NewV4().String(),
+		Requested:     n,
+		Created:       time.Now().Unix(),
+		Status:        "provisioning",
+		RequestedBy:   requestedBy,
+		Zone:          zone,
+		DeleteInHours: deleteInHours,
 	}
 
 	err := insertRequest(r)

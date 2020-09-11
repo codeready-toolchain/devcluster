@@ -162,13 +162,14 @@ func getClusters(requestID string) ([]Cluster, error) {
 
 func convertBSONToRequest(m bson.M) Request {
 	return Request{
-		ID:          string(fmt.Sprintf("%v", m["_id"])),
-		RequestedBy: string(fmt.Sprintf("%v", m["requested_by"])),
-		Created:     int64(m["created"].(int64)),
-		Error:       string(fmt.Sprintf("%v", m["error"])),
-		Requested:   int(m["requested"].(int32)),
-		Status:      string(fmt.Sprintf("%v", m["status"])),
-		Zone:        string(fmt.Sprintf("%v", m["zone"])),
+		ID:            string(fmt.Sprintf("%v", m["_id"])),
+		RequestedBy:   string(fmt.Sprintf("%v", m["requested_by"])),
+		Created:       int64(m["created"].(int64)),
+		Error:         string(fmt.Sprintf("%v", m["error"])),
+		Requested:     int(m["requested"].(int32)),
+		Status:        string(fmt.Sprintf("%v", m["status"])),
+		Zone:          string(fmt.Sprintf("%v", m["zone"])),
+		DeleteInHours: int(m["delete_in_hours"].(int32)),
 	}
 }
 
@@ -181,6 +182,7 @@ func convertClusterRequestToBSON(req Request) bson.D {
 		{"created", req.Created},
 		{"requested_by", req.RequestedBy},
 		{"zone", req.Zone},
+		{"delete_in_hours", req.DeleteInHours},
 	}
 }
 
