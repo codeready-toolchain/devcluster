@@ -5,13 +5,11 @@ import (
 	"testing"
 
 	"github.com/codeready-toolchain/devcluster/pkg/errors"
-
 	"github.com/codeready-toolchain/devcluster/pkg/log"
-
-	"gopkg.in/h2non/gock.v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/h2non/gock.v1"
 )
 
 var mockConfig = &MockConfig{}

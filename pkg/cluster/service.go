@@ -13,6 +13,18 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const (
+	StatusDeleted        = "deleted"
+	StatusDeleting       = "deleting"
+	StatusFailed         = "failed"
+	StatusNormal         = "normal"
+	StatusReady          = "ready"
+	StatusProvisioning   = "provisioning"
+	StatusFailedToDelete = "failed to delete"
+	StatusExpired        = "expired"
+	StatusFailedToExpire = "failed to expire"
+)
+
 // Request represents a cluster request
 type Request struct {
 	ID            string
@@ -88,7 +100,7 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 		ID:            uuid.NewV4().String(),
 		Requested:     n,
 		Created:       time.Now().Unix(),
-		Status:        "provisioning",
+		Status:        StatusProvisioning,
 		RequestedBy:   requestedBy,
 		Zone:          zone,
 		DeleteInHours: deleteInHours,
@@ -121,13 +133,13 @@ func (s *ClusterService) DeleteCluster(id string) error {
 		return err
 	}
 	c.Error = ""
-	c.Status = "deleted"
+	c.Status = StatusDeleted
 	return replaceCluster(*c)
 }
 
 // ResumeProvisioningRequests load requests that are still provisioning and wait for their clusters to be ready to update the status
 func (s *ClusterService) ResumeProvisioningRequests() error {
-	requests, err := getRequestsWithStatus("provisioning")
+	requests, err := getRequestsWithStatus(StatusProvisioning)
 	if err != nil {
 		return err
 	}
@@ -167,6 +179,55 @@ func (s *ClusterService) ResumeProvisioningRequests() error {
 	return nil
 }
 
+// StartDeletingExpiredClusters starts a goroutine to check expired clusters every n seconds and delete them
+func (s *ClusterService) StartDeletingExpiredClusters(intervalInSec int) {
+	go func() {
+		for {
+			reqs, err := getAllRequests()
+			if err != nil {
+				log.Error(nil, err, "unable to get request to check expired clusters")
+			} else {
+				for _, r := range reqs {
+					if r.Status != "expired" && expired(r) { // cluster is expired but the status is not yet set to "expired"
+						clusters, err := getClusters(r.ID)
+						if err != nil {
+							log.Error(nil, err, "unable to get clusters to check expired")
+						} else {
+							allDeleted := true
+							for _, c := range clusters {
+								if c.Status != StatusDeleted && c.Status != StatusDeleting {
+									// Delete the expired cluster
+									err := s.DeleteCluster(c.ID)
+									if err != nil {
+										// Set the error status for the cluster
+										clusterFailedToDelete(c, err)
+										allDeleted = false
+									}
+								}
+							}
+							if allDeleted {
+								// All clusters deleted. Mark the request as expired.
+								err = updateRequestStatus(r.ID, StatusExpired, "")
+							} else {
+								// Failed to delete at least one cluster. Mark the request as failed to expire.
+								err = updateRequestStatus(r.ID, StatusFailedToExpire, "unable to delete some clusters")
+							}
+							if err != nil {
+								log.Error(nil, err, "unable to update request status")
+							}
+						}
+					}
+				}
+			}
+			time.Sleep(time.Duration(intervalInSec) * time.Second)
+		}
+	}()
+}
+
+func expired(r Request) bool {
+	return time.Unix(r.Created, 0).Add(time.Duration(r.DeleteInHours) * time.Hour).Before(time.Now())
+}
+
 func hash(s string) uint32 {
 	h := fnv.New32a()
 	_, err := h.Write([]byte(s))
@@ -192,9 +253,9 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 	}
 	if err != nil {
 		// Set request status to failed and break
-		r.Status = "failed"
+		r.Status = StatusFailed
 		r.Error = err.Error()
-		err := updateRequestStatus(r.ID, "failed", err.Error())
+		err := updateRequestStatus(r.ID, StatusFailed, err.Error())
 		return err
 	}
 	log.Infof(nil, "starting provisioning cluster %s", name)
@@ -209,7 +270,7 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")
 			if devclustererr.IsNotFound(err) {
-				return clusterFailed(err, "deleted", clusterID, clusterName, r.ID)
+				return clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
 			}
 			err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
 			if err != nil {
@@ -237,12 +298,12 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 }
 
 func clusterReady(c Cluster) bool {
-	return c.Status == "normal" && c.URL != ""
+	return c.Status == StatusNormal && c.URL != ""
 }
 
 // clusterProvisioningPending returns true if cluster is still provisioning
 func clusterProvisioningPending(c Cluster) bool {
-	return !clusterReady(c) && c.Status != "failed" && c.Status != "deleted"
+	return !clusterReady(c) && c.Status != StatusFailed && c.Status != StatusDeleted
 }
 
 func clusterFailed(clErr error, status, id, name, reqID string) error {
@@ -260,6 +321,21 @@ func clusterFailed(clErr error, status, id, name, reqID string) error {
 	clToUpdate.Error = clErr.Error()
 	clToUpdate.Status = status
 	return replaceCluster(*clToUpdate)
+}
+
+func clusterFailedToDelete(c Cluster, e error) {
+	log.Error(nil, e, "unable to delete expired cluster")
+	err := replaceCluster(Cluster{
+		ID:        c.ID,
+		RequestID: c.RequestID,
+		Name:      c.Name,
+		URL:       c.URL,
+		Status:    StatusFailedToDelete,
+		Error:     e.Error(),
+	})
+	if err != nil {
+		log.Error(nil, err, "unable to update status for failed to delete cluster")
+	}
 }
 
 func convertCluster(from ibmcloud.Cluster, requestID string) Cluster {

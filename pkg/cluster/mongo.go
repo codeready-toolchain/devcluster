@@ -92,7 +92,7 @@ func setRequestStatusToSuccessIfDone(req Request) error {
 		}
 	}
 	log.Infof(nil, "request %s is ready", req.ID)
-	return updateRequestStatus(req.ID, "ready", "")
+	return updateRequestStatus(req.ID, StatusReady, "")
 }
 
 func replaceRequest(req Request) error {
