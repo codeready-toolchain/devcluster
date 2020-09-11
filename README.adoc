@@ -59,7 +59,7 @@ Set `DEVCLUSTER_MONGODB_CONNECTION_STRING` environment variable to your test Mon
 export DEVCLUSTER_MONGODB_CONNECTION_STRING="<connection_string>"
 ```
 
-The run the integration tests by executing:
+Run the integration tests by executing:
 
 ```
 make test-integration
@@ -67,6 +67,14 @@ make test-integration
 
 
 Tests are run with bundled assets, see above.
+
+==== All Tests
+
+Run all the integration and unit tests by executing:
+
+```
+make test-all
+```
 
 === VSCode Testing/Debugging
 

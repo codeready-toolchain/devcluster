@@ -193,7 +193,7 @@ function updateClusterRequests() {
       for(var i = 0; i < data.length; i++) {
         var req = data[i];
         var created = new Date(req.Created * 1000)
-        content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + created.toString() + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.Status + "</td><td>" + req.DeleteInHours + "</td></tr>";
+        content = content + "<tr><td><a onclick='showClusterRequest(\"" + req.ID + "\")'>" + req.ID +"</a></td><td>" + created.toString() + "</td><td>" + req.Requested + "</td><td>" + req.RequestedBy + "</td><td>" + req.DeleteInHours + "</td><td>" + req.Status + "</td></tr>";
       }
       document.getElementById('cluster-request-table').innerHTML = "<table style=\"width:100%\"><tr><th>ID</th><th>Created</th><th># of Clusters</th><th>Requested by</th><th>Delete in hours</th><th>Status</th></tr>" + content + "</table>";
     }
@@ -286,7 +286,7 @@ function login() {
 function requestClusters() {
   var n = document.getElementById("number-of-clusters").value;
   var zone = document.getElementById("zones").value;
-  var deleteInHours = document.getElementById("deleteIn").value;
+  var deleteInHours = document.getElementById("deleteInHours").value;
   getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n + "&zone=" + zone + "&delete-in-hours=" + deleteInHours, function(err, data) {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));

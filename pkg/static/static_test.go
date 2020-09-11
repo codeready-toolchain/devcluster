@@ -3,13 +3,16 @@ package static_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/codeready-toolchain/devcluster/test/resource"
 
 	"github.com/codeready-toolchain/devcluster/pkg/static"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStatic(t *testing.T) {
+	resource.Require(t, resource.UnitTest)
+
 	// Get the static assets.
 	hfs := static.Assets
 	// Open the default file; note that the

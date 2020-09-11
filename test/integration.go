@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 
+	"github.com/codeready-toolchain/devcluster/test/resource"
+
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
@@ -23,6 +25,8 @@ type IntegrationTestSuite struct {
 
 // SetupSuite sets the suite up and sets testmode.
 func (s *IntegrationTestSuite) SetupSuite() {
+	resource.Require(s.T(), resource.Database)
+
 	// create logger and registry
 	log.Init("devcluster-testing")
 
@@ -39,7 +43,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 
 	s.Config.GetViperInstance().Set("mongodb.database", "devcluster-test")
-	if ""==s.Config.GetMongodbConnectionString() {
+	if "" == s.Config.GetMongodbConnectionString() {
 		panic(errors.New("mongoDB connection string is not set"))
 	}
 	disconnect, err := mongodb.InitDefaultClient(s.Config)

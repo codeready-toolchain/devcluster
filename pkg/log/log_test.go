@@ -10,12 +10,15 @@ import (
 
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/pkg/context"
+	"github.com/codeready-toolchain/devcluster/test/resource"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func TestLog(t *testing.T) {
+	resource.Require(t, resource.UnitTest)
 	var buf bytes.Buffer
 	once.Reset()
 	Init("logger_tests", func(o *zap.Options) {

@@ -3,6 +3,7 @@ package test
 import (
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/test/resource"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -15,6 +16,8 @@ type UnitTestSuite struct {
 
 // SetupSuite sets the suite up and sets testmode.
 func (s *UnitTestSuite) SetupSuite() {
+	resource.Require(s.T(), resource.UnitTest)
+
 	// create logger and registry
 	log.Init("devcluster-testing")
 

@@ -6,18 +6,26 @@ import (
 
 	"github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"gopkg.in/h2non/gock.v1"
 )
 
-var mockConfig = &MockConfig{}
+type TestIBMCloudSuite struct {
+	test.UnitTestSuite
+	mockConfig *MockConfig
+}
 
-func TestGetZones(t *testing.T) {
-	log.Init("devcluster-testing")
-	cl := newClient(t)
-	t.Run("OK", func(t *testing.T) {
+func TestRunIBMCloudSuite(t *testing.T) {
+	suite.Run(t, &TestIBMCloudSuite{UnitTestSuite: test.UnitTestSuite{}, mockConfig: &MockConfig{}})
+}
+
+func (s *TestIBMCloudSuite) TestGetZones() {
+	cl := s.newClient(s.T())
+	s.T().Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -49,10 +57,9 @@ func TestGetZones(t *testing.T) {
 	})
 }
 
-func TestGetCluster(t *testing.T) {
-	log.Init("devcluster-testing")
-	cl := newClient(t)
-	t.Run("OK", func(t *testing.T) {
+func (s *TestIBMCloudSuite) TestGetCluster() {
+	cl := s.newClient(s.T())
+	s.T().Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -71,7 +78,7 @@ func TestGetCluster(t *testing.T) {
 		}, cluster)
 	})
 
-	t.Run("Not Found", func(t *testing.T) {
+	s.T().Run("Not Found", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -87,10 +94,9 @@ func TestGetCluster(t *testing.T) {
 	})
 }
 
-func TestCreateCluster(t *testing.T) {
-	log.Init("devcluster-testing")
-	cl := newClient(t)
-	t.Run("Vlan is available", func(t *testing.T) {
+func (s *TestIBMCloudSuite) TestCreateCluster() {
+	cl := s.newClient(s.T())
+	s.T().Run("Vlan is available", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -112,7 +118,7 @@ func TestCreateCluster(t *testing.T) {
 		assert.Equal(t, "some-id", id)
 	})
 
-	t.Run("Vlan is not available", func(t *testing.T) {
+	s.T().Run("Vlan is not available", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -135,10 +141,10 @@ func TestCreateCluster(t *testing.T) {
 	})
 }
 
-func TestDeleteCluster(t *testing.T) {
+func (s *TestIBMCloudSuite) TestDeleteCluster() {
 	log.Init("devcluster-testing")
-	cl := newClient(t)
-	t.Run("OK", func(t *testing.T) {
+	cl := s.newClient(s.T())
+	s.T().Run("OK", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://containers.cloud.ibm.com").
@@ -153,9 +159,9 @@ func TestDeleteCluster(t *testing.T) {
 	})
 }
 
-func TestToken(t *testing.T) {
-	t.Run("refresh", func(t *testing.T) {
-		cl := newClient(t)
+func (s *TestIBMCloudSuite) TestToken() {
+	s.T().Run("refresh", func(t *testing.T) {
+		cl := s.newClient(t)
 		setNewToken(t, cl, 1598983098) // Expired
 
 		var newExpiration int64
@@ -180,8 +186,8 @@ func TestToken(t *testing.T) {
 	})
 }
 
-func newClient(t *testing.T) *Client {
-	cl := NewClient(mockConfig)
+func (s *TestIBMCloudSuite) newClient(t *testing.T) *Client {
+	cl := NewClient(s.mockConfig)
 	setNewToken(t, cl, 1998983098)
 	return cl
 }

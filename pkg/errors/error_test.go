@@ -48,5 +48,14 @@ func (s *TestErrorsSuite) TestErrors() {
 	s.Run("IsNotFound", func() {
 		err := devclustererr.NewNotFoundError("some message", "some details")
 		assert.True(s.T(), devclustererr.IsNotFound(err))
+		assert.True(s.T(), devclustererr.IsNotFound(*err))
+
+		err = devclustererr.NewNotFoundError("some message", "some details")
+		err.Code = http.StatusInternalServerError
+		assert.False(s.T(), devclustererr.IsNotFound(err))
+		assert.False(s.T(), devclustererr.IsNotFound(*err))
+
+		e := errors.New("some error")
+		assert.False(s.T(), devclustererr.IsNotFound(e))
 	})
 }

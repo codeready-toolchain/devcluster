@@ -4,21 +4,25 @@ COV_DIR = $(OUT_DIR)/coverage
 ## runs the unit tests with bundles assets
 test: generate
 	@echo "running the unit tests without coverage..."
-	go test ${V_FLAG} -race ./pkg/...
+	DEVCLUSTER_RESOURCE_UNIT_TEST=true DEVCLUSTER_RESOURCE_DATABASE=false go test ${V_FLAG} -race ./pkg/...
 
 .PHONY: test-integration
 ## runs the integration tests
 test-integration: generate
 	@echo "running the integration tests without coverage..."
-	go test ${V_FLAG} -race ./test/...
+	DEVCLUSTER_RESOURCE_UNIT_TEST=false DEVCLUSTER_RESOURCE_DATABASE=true go test ${V_FLAG} -race ./pkg/...
 
-.PHONY: test-with-coverage
-## runs the unit tests with coverage
-test-with-coverage: generate
-	@echo "running the unit tests with coverage..."
+.PHONY: test-all-with-coverage
+## runs all the tests with coverage
+test-all-with-coverage: generate
+	@echo "running all the tests with coverage..."
 	@-mkdir -p $(COV_DIR)
 	@-rm $(COV_DIR)/coverage.txt
-	go test -timeout 10m -vet off ${V_FLAG} -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./pkg/...
+	DEVCLUSTER_RESOURCE_UNIT_TEST=true DEVCLUSTER_RESOURCE_DATABASE=true go test -timeout 10m -vet off ${V_FLAG} -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./pkg/...
+
+.PHONY: test-all
+## runs all the tests
+test-all: test test-integration
 
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io. 

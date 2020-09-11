@@ -38,10 +38,11 @@ func (e Error) Error() string {
 }
 
 func IsNotFound(err error) bool {
-	e, ok := err.(Error)
-	if !ok {
-		ep, ok := err.(*Error)
-		return ok && ep.Code == http.StatusNotFound
+	switch t := err.(type) {
+	case Error:
+		return t.Code == http.StatusNotFound
+	case *Error:
+		return t.Code == http.StatusNotFound
 	}
-	return ok && e.Code == http.StatusNotFound
+	return false
 }
