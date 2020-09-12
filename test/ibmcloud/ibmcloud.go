@@ -2,12 +2,14 @@ package ibmcloud
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type MockIBMCloudClient struct {
@@ -65,6 +67,10 @@ func (c *MockIBMCloudClient) CreateCluster(name, zone string) (string, error) {
 func (c *MockIBMCloudClient) GetCluster(id string) (*ibmcloud.Cluster, error) {
 	defer c.mux.RUnlock()
 	c.mux.RLock()
+	clst := c.clustersByID[id]
+	if clst == nil {
+		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
+	}
 	return c.clustersByID[id], nil
 }
 
@@ -75,6 +81,8 @@ func (c *MockIBMCloudClient) DeleteCluster(id string) error {
 	if cluster != nil {
 		c.clustersByID[id] = nil
 		c.clustersByName[cluster.Name] = nil
+	} else {
+		return devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
 	}
 	return nil
 }

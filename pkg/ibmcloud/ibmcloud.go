@@ -299,6 +299,9 @@ func (c *Client) DeleteCluster(id string) error {
 	}
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode == http.StatusNotFound {
+		return devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
+	}
 	if res.StatusCode != http.StatusNoContent {
 		return errors.Errorf("unable to delete cluster. Response status: %s. Response body: %s", res.Status, bodyString)
 	}
