@@ -287,7 +287,11 @@ function requestClusters() {
   var n = document.getElementById("number-of-clusters").value;
   var zone = document.getElementById("zones").value;
   var deleteInHours = document.getElementById("deleteInHours").value;
-  getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n + "&zone=" + zone + "&delete-in-hours=" + deleteInHours, function(err, data) {
+  var noSubnetParam = "";
+  if (document.getElementById("no-subnet").checked) {
+    noSubnetParam = "&no-subnet=true";
+  }
+  getJSON('POST', '/api/v1/cluster-req', idToken, "number-of-clusters=" + n + "&zone=" + zone + "&delete-in-hours=" + deleteInHours + noSubnetParam, function(err, data) {
     if (err != null) {
       showError(JSON.stringify(data, null, 2));
     } else {

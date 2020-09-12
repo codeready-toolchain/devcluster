@@ -54,7 +54,10 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 
 	log.Infof(ctx, "Requested provisioning %s clusters", ns)
 	requestedBy := ctx.GetString(context.UsernameKey)
-	req, err := cluster.DefaultClusterService.CreateNewRequest(requestedBy, n, zone, deleteInHours)
+
+	noSubnet := ctx.PostForm("no-subnet") != ""
+
+	req, err := cluster.DefaultClusterService.CreateNewRequest(requestedBy, n, zone, deleteInHours, noSubnet)
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")

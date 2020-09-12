@@ -33,7 +33,7 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int, deleteIn int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn)
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn, false)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)

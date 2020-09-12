@@ -45,7 +45,7 @@ func (c *MockIBMCloudClient) GetVlans(zone string) ([]ibmcloud.Vlan, error) {
 	return []ibmcloud.Vlan{}, nil
 }
 
-func (c *MockIBMCloudClient) CreateCluster(name, zone string) (string, error) {
+func (c *MockIBMCloudClient) CreateCluster(name, zone string, noSubnet bool) (string, error) {
 	defer c.mux.Unlock()
 	c.mux.Lock()
 	if c.clustersByName[name] != nil {

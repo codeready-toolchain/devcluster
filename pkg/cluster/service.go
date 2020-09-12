@@ -35,6 +35,7 @@ type Request struct {
 	RequestedBy   string
 	Zone          string
 	DeleteInHours int
+	NoSubnet      bool
 }
 
 // Request represents a cluster request with detailed information about all request clusters
@@ -95,7 +96,7 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 }
 
 // CreateNewRequest creates a new request and starts provisioning clusters
-func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string, deleteInHours int) (Request, error) {
+func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string, deleteInHours int, noSubnet bool) (Request, error) {
 	r := Request{
 		ID:            uuid.NewV4().String(),
 		Requested:     n,
@@ -104,6 +105,7 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 		RequestedBy:   requestedBy,
 		Zone:          zone,
 		DeleteInHours: deleteInHours,
+		NoSubnet:      noSubnet,
 	}
 
 	err := insertRequest(r)
@@ -244,7 +246,7 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.
 	for i := 0; i < 6; i++ {
-		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone)
+		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone, r.NoSubnet)
 		if err == nil {
 			break
 		}
@@ -270,7 +272,15 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")
 			if devclustererr.IsNotFound(err) {
-				return clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
+				// set the state to "deleted" but only if it's not in the "deleted" state already (in case of manual deletion)
+				cl, e := getCluster(clusterID)
+				if e != nil {
+					return e
+				}
+				if cl == nil || cl.Status != StatusDeleted {
+					return clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
+				}
+				return nil
 			}
 			err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
 			if err != nil {

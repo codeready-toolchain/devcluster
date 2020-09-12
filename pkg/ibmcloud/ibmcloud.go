@@ -27,7 +27,7 @@ type Configuration interface {
 type ICClient interface {
 	GetVlans(zone string) ([]Vlan, error)
 	GetZones() ([]Location, error)
-	CreateCluster(name, zone string) (string, error)
+	CreateCluster(name, zone string, noSubnet bool) (string, error)
 	GetCluster(id string) (*Cluster, error)
 	DeleteCluster(id string) error
 }
@@ -180,13 +180,13 @@ const ClusterConfigTemplate = `
   "name": "%s",
   "publicVlan": "%s",
   "privateVlan": "%s",
-  "noSubnet": true,
+  "noSubnet": %t,
   "workerNum": 2
-}` //"noSubnet": true,
+}`
 
 // CreateCluster creates a cluster
 // Returns the cluster ID
-func (c *Client) CreateCluster(name, zone string) (string, error) {
+func (c *Client) CreateCluster(name, zone string, noSubnet bool) (string, error) {
 	token, err := c.Token()
 	if err != nil {
 		return "", err
@@ -206,7 +206,7 @@ func (c *Client) CreateCluster(name, zone string) (string, error) {
 		log.Infof(nil, "WARNING: no public vlan found for zone %s. New vlan will be created", zone)
 	}
 
-	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, zone, name, public, private)))
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, zone, name, public, private, noSubnet)))
 	req, err := http.NewRequest("POST", "https://containers.cloud.ibm.com/global/v1/clusters", body)
 	if err != nil {
 		return "", err

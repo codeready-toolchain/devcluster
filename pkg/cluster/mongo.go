@@ -170,6 +170,7 @@ func convertBSONToRequest(m bson.M) Request {
 		Status:        string(fmt.Sprintf("%v", m["status"])),
 		Zone:          string(fmt.Sprintf("%v", m["zone"])),
 		DeleteInHours: int(m["delete_in_hours"].(int32)),
+		NoSubnet:      m["no_subnet"].(bool),
 	}
 }
 
@@ -183,6 +184,7 @@ func convertClusterRequestToBSON(req Request) bson.D {
 		{"requested_by", req.RequestedBy},
 		{"zone", req.Zone},
 		{"delete_in_hours", req.DeleteInHours},
+		{"no_subnet", req.NoSubnet},
 	}
 }
 

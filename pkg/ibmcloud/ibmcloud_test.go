@@ -108,12 +108,12 @@ func (s *TestIBMCloudSuite) TestCreateCluster() {
 		gock.New("https://containers.cloud.ibm.com").
 			Post("global/v1/clusters").
 			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
-			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345")).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345", false)).
 			Persist().
 			Reply(201).
 			BodyString(`{"id": "some-id"}`)
 
-		id, err := cl.CreateCluster("john", "zone-1")
+		id, err := cl.CreateCluster("john", "zone-1", false)
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})
@@ -130,12 +130,12 @@ func (s *TestIBMCloudSuite) TestCreateCluster() {
 		gock.New("https://containers.cloud.ibm.com").
 			Post("global/v1/clusters").
 			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
-			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "", "")).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "", "", true)).
 			Persist().
 			Reply(201).
 			BodyString(`{"id": "some-id"}`)
 
-		id, err := cl.CreateCluster("john", "zone-1")
+		id, err := cl.CreateCluster("john", "zone-1", true)
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})
