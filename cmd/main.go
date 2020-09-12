@@ -29,7 +29,7 @@ func main() {
 	defer disconnect()
 
 	cluster.InitDefaultClusterService(config)
-	cluster.DefaultClusterService.StartDeletingExpiredClusters(3600) // Re-check every hour
+	cluster.DefaultClusterService.StartDeletingExpiredClusters(600) // Re-check every 10 minutes
 	// If there are still provisioning requests left from previous sessions then resume them
 	err = cluster.DefaultClusterService.ResumeProvisioningRequests()
 	if err != nil {

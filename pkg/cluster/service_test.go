@@ -140,15 +140,18 @@ func (s *TestIntegrationSuite) TestRequestService() {
 	})
 
 	s.Run("delete expired clusters", func() {
-		//// 1. Provision two requests. One is expired and one not.
-		//_, serv, reqExpired, reqWithClustersExpired := s.provisionClusters(3, 0)
-		//_, _, req, reqWithClusters := s.provisionClusters(3, 100)
-		//
-		//// 2. Start deleting clusters.
-		//serv.StartDeletingExpiredClusters(1)
-		//
-		//// 3. Check the expired one is deleted and the other one is not.
-		//// TODO
+		// 1. Provision two requests. One is expired and the other one is not.
+		_, serv, reqExpired, _ := s.provisionClusters(3, 0)
+		_, _, req, _ := s.provisionClusters(3, 100)
+
+		// 2. Start deleting clusters.
+		serv.StartDeletingExpiredClusters(1)
+
+		// 3. Check the expired one is deleted and the other one is not.
+		_, err := waitForRequest(service, reqExpired, requestExpired, clustersDeleted)
+		require.NoError(s.T(), err)
+		_, err = waitForClustersToGetProvisioned(service, req)
+		require.NoError(s.T(), err)
 	})
 }
 
@@ -188,10 +191,73 @@ func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.Cluste
 var retryInterval = 100 * time.Millisecond
 var timeout = 5 * time.Second
 
+type RequestCriterion func(req *cluster.RequestWithClusters) (bool, error)
+
+func requestReady(req *cluster.RequestWithClusters) (bool, error) {
+	return req.Status == "ready", nil
+}
+
+func requestExpired(req *cluster.RequestWithClusters) (bool, error) {
+	return req.Status == "expired", nil
+}
+
+func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		ok := c.Status == "deploying" &&
+			c.RequestID == req.ID &&
+			c.Error == "" &&
+			c.URL == "" &&
+			strings.Contains(c.Name, "redhat-")
+		if !ok {
+			fmt.Printf("Found clusters: %v\n", req.Clusters)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func clustersDeleted(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		ok := c.Status == "deleted" &&
+			c.RequestID == req.ID &&
+			c.Error == "" &&
+			strings.Contains(c.Name, "redhat-")
+		if !ok {
+			fmt.Printf("Found clusters: %v\n", req.Clusters)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		ok := c.Status == "normal" &&
+			c.RequestID == req.ID &&
+			c.Error == "" &&
+			c.URL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
+			strings.Contains(c.Name, "redhat-")
+		if !ok {
+			fmt.Printf("Found clusters: %v\n", req.Clusters)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func waitForClustersToStartProvisioning(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
+	fmt.Println("Wait for clusters to start provisioning")
+	return waitForRequest(service, request, clustersDeploying)
+}
+
+func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
+	fmt.Println("Wait for clusters to get provisioned")
+	return waitForRequest(service, request, requestReady, clustersReady)
+}
+
+func waitForRequest(service *cluster.ClusterService, request cluster.Request, criteria ...RequestCriterion) (cluster.RequestWithClusters, error) {
 	var req cluster.RequestWithClusters
 	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		fmt.Println("Wait for clusters to start provisioning")
 		r, err := service.GetRequestWithClusters(request.ID)
 		if err != nil {
 			return false, err
@@ -216,60 +282,11 @@ func waitForClustersToStartProvisioning(service *cluster.ClusterService, request
 		if r.DeleteInHours != request.DeleteInHours {
 			return false, errors.New("deleteInHours doesn't match")
 		}
-		for _, c := range r.Clusters {
-			ok := c.Status == "deploying" &&
-				c.RequestID == request.ID &&
-				c.Error == "" &&
-				c.URL == "" &&
-				strings.Contains(c.Name, "redhat-")
-			if !ok {
-				fmt.Printf("Found clusters: %v\n", r.Clusters)
-				return false, nil
-			}
-		}
-		req = *r
-		return true, nil
-	})
-	return req, err
-}
-
-func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
-	var req cluster.RequestWithClusters
-	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		fmt.Println("Wait for clusters to get provisioned")
-		r, err := service.GetRequestWithClusters(request.ID)
-		if err != nil {
-			return false, err
-		}
-		if r == nil {
-			fmt.Println("Request not found")
-			return false, nil
-		}
-		if r.Status != "ready" || len(r.Clusters) != request.Requested {
-			fmt.Printf("Found request: %v\n", r)
-			return false, nil
-		}
-		if r.Zone != request.Zone {
-			return false, errors.New("zone doesn't match")
-		}
-		if r.RequestedBy != request.RequestedBy {
-			return false, errors.New("requestedBy doesn't match")
-		}
-		if r.Created < 1 && r.Created > time.Now().Unix() {
-			return false, errors.New("invalid created time")
-		}
-		if r.DeleteInHours != request.DeleteInHours {
-			return false, errors.New("deleteInHours doesn't match")
-		}
-		for _, c := range r.Clusters {
-			ok := c.Status == "normal" &&
-				c.RequestID == request.ID &&
-				c.Error == "" &&
-				c.URL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
-				strings.Contains(c.Name, "redhat-")
-			if !ok {
-				fmt.Printf("Found clusters: %v\n", r.Clusters)
-				return false, nil
+		for _, match := range criteria {
+			ok, err := match(r)
+			if err != nil || !ok {
+				fmt.Printf("Found request: %v\n", r)
+				return ok, err
 			}
 		}
 		req = *r
