@@ -268,7 +268,7 @@ func (c *Client) GetCluster(id string) (*Cluster, error) {
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode == http.StatusNotFound {
-		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
+		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), bodyString)
 	}
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("unable to get cluster. Response status: %s. Response body: %s", res.Status, bodyString)
