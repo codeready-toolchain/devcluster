@@ -272,21 +272,27 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")
 			if devclustererr.IsNotFound(err) {
-				// set the state to "deleted" but only if it's not in the "deleted" state already (in case of manual deletion)
+				// set the state to "deleted" but only if it's not in the "deleted" state already (in case of manual deletion) and return.
+				// otherwise set the status to "deleted" with the error message from IBM Cloud and try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 				cl, e := getCluster(clusterID)
 				if e != nil {
 					return e
 				}
 				if cl == nil || cl.Status != StatusDeleted {
-					return clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
+					e := clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
+					if e != nil {
+						return e
+					}
+				} else {
+					return nil
 				}
-				return nil
+			} else {
+				err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
+				if err != nil {
+					return err
+				}
 			}
-			err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
-			if err != nil {
-				return err
-			}
-			// Do not exist. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
+			// Do not return. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 		} else {
 			clusterToAdd := convertCluster(*c, r.ID)
 			err := replaceCluster(clusterToAdd)
