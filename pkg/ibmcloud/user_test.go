@@ -1,8 +1,10 @@
 package ibmcloud
 
 import (
+	"fmt"
 	"testing"
 
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/test"
 
 	"github.com/stretchr/testify/assert"
@@ -72,5 +74,104 @@ func (s *TestUserSuite) TestCloudDirectoryUser() {
 
 		err := cl.DeleteCloudDirectoryUser("13579")
 		require.NoError(t, err)
+	})
+}
+
+const iamSingleUserExample = `
+{
+    "total_results": 1,
+    "limit": 100,
+    "resources": [
+        {
+            "id": "75fb826aff7b418a9c79915c90258bb8",
+            "iam_id": "5drS2pDaiG-a3659d3e-24e5-4973-b55a-68177850cae9",
+            "user_id": "dev-cluster-user-5193",
+            "state": "ACTIVE",
+            "email": "devcluster-user-1@redhat.com"
+        }
+    ]
+}`
+
+const iamNoUsersExample = `
+{
+    "total_results": 0,
+    "limit": 100,
+    "resources": []
+}`
+
+const iamMultipleUsersExample = `
+{
+    "total_results": 2,
+    "limit": 100,
+    "resources": [
+        {
+            "id": "75fb826aff7b418a9c79915c90258bb8",
+            "iam_id": "5drS2pDaiG-a3659d3e-24e5-4973-b55a-68177850cae9",
+            "user_id": "dev-cluster-user-5193",
+            "state": "ACTIVE",
+            "email": "devcluster-user-1@redhat.com"
+        },
+        {
+            "id": "86fb826aff7b418a9c79915c90258bb8",
+            "iam_id": "1wfS2pDaiG-a3659d3e-24e5-4973-b55a-68177850cae9",
+            "user_id": "dev-cluster-user-5193",
+            "state": "ACTIVE",
+            "email": "devcluster-user-1@redhat.com"
+        }
+    ]
+}`
+
+func (s *TestUserSuite) TestIAMUser() {
+	cl := newClient(s.T(), s.mockConfig)
+	s.T().Run("Get IAM User by user_id OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://user-management.cloud.ibm.com").
+			Get(fmt.Sprintf("v2/accounts/%s/users", s.mockConfig.GetIBMCloudAccountID())).
+			MatchParam("user_id", "dev-cluster-user-5193").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(iamSingleUserExample)
+
+		user, err := cl.GetIAMUserByUserID("dev-cluster-user-5193")
+		require.NoError(t, err)
+		assert.Equal(t, "75fb826aff7b418a9c79915c90258bb8", user.ID)
+		assert.Equal(t, "dev-cluster-user-5193", user.UserID)
+		assert.Equal(t, "5drS2pDaiG-a3659d3e-24e5-4973-b55a-68177850cae9", user.IAMID)
+		assert.Equal(t, "devcluster-user-1@redhat.com", user.Email)
+	})
+
+	s.T().Run("Get IAM User by user_id not found", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://user-management.cloud.ibm.com").
+			Get(fmt.Sprintf("v2/accounts/%s/users", s.mockConfig.GetIBMCloudAccountID())).
+			MatchParam("user_id", "dev-cluster-user-5193").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(iamNoUsersExample)
+
+		_, err := cl.GetIAMUserByUserID("dev-cluster-user-5193")
+		assert.Equal(t, devclustererr.NewNotFoundError("IAM user with user_id=dev-cluster-user-5193 not found", iamNoUsersExample), err)
+	})
+
+	s.T().Run("Too many IAM users causes Not Found", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://user-management.cloud.ibm.com").
+			Get(fmt.Sprintf("v2/accounts/%s/users", s.mockConfig.GetIBMCloudAccountID())).
+			MatchParam("user_id", "dev-cluster-user-5193").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(iamMultipleUsersExample)
+
+		_, err := cl.GetIAMUserByUserID("dev-cluster-user-5193")
+		assert.Equal(t, devclustererr.NewInternalServerError("too many IAM users with user_id=dev-cluster-user-5193", iamMultipleUsersExample), err)
 	})
 }

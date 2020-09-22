@@ -33,6 +33,15 @@ func NewNotFoundError(message, details string) *Error {
 	}
 }
 
+func NewInternalServerError(message, details string) *Error {
+	return &Error{
+		Status:  http.StatusText(http.StatusInternalServerError),
+		Code:    http.StatusInternalServerError,
+		Message: message,
+		Details: details,
+	}
+}
+
 func (e Error) Error() string {
 	return fmt.Sprintf("%d %s %s: %s", e.Code, e.Status, e.Message, e.Details)
 }
@@ -43,6 +52,16 @@ func IsNotFound(err error) bool {
 		return t.Code == http.StatusNotFound
 	case *Error:
 		return t.Code == http.StatusNotFound
+	}
+	return false
+}
+
+func IsInternalServerError(err error) bool {
+	switch t := err.(type) {
+	case Error:
+		return t.Code == http.StatusInternalServerError
+	case *Error:
+		return t.Code == http.StatusInternalServerError
 	}
 	return false
 }

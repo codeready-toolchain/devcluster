@@ -57,5 +57,25 @@ func (s *TestErrorsSuite) TestErrors() {
 
 		e := errors.New("some error")
 		assert.False(s.T(), devclustererr.IsNotFound(e))
+
+		err = devclustererr.NewInternalServerError("some message", "some details")
+		assert.False(s.T(), devclustererr.IsNotFound(err))
+	})
+
+	s.Run("IsInternalServerError", func() {
+		err := devclustererr.NewInternalServerError("some message", "some details")
+		assert.True(s.T(), devclustererr.IsInternalServerError(err))
+		assert.True(s.T(), devclustererr.IsInternalServerError(*err))
+
+		err = devclustererr.NewInternalServerError("some message", "some details")
+		err.Code = http.StatusNotFound
+		assert.False(s.T(), devclustererr.IsInternalServerError(err))
+		assert.False(s.T(), devclustererr.IsInternalServerError(*err))
+
+		e := errors.New("some error")
+		assert.False(s.T(), devclustererr.IsInternalServerError(e))
+
+		err = devclustererr.NewNotFoundError("some message", "some details")
+		assert.False(s.T(), devclustererr.IsInternalServerError(err))
 	})
 }
