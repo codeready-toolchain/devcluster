@@ -75,6 +75,30 @@ func (c *Client) CreateCloudDirectoryUser() (*CloudDirectoryUser, error) {
 	return &userObj, nil
 }
 
+// DeleteCloudDirectoryUser deletes the cloud directory user with the given ID.
+func (c *Client) DeleteCloudDirectoryUser(id string) error {
+	token, err := c.Token()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://%s.appid.cloud.ibm.com/management/v4/%s/cloud_directory/remove/%s", apiRegion, c.config.GetIBMCloudTenantID(), id), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to delete cloud directory user")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusNoContent {
+		return errors.Errorf("unable to delete cloud directory user. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	return nil
+}
+
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func generatePassword(n int) string {

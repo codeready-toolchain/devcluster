@@ -36,9 +36,9 @@ const cloudDirectoryUserExample = `
     "id": "1029a9cb-7b8a-4d18-ba91-fa4830ae0860"
 }`
 
-func (s *TestUserSuite) TestCreateCloudDirectoryUser() {
+func (s *TestUserSuite) TestCloudDirectoryUser() {
 	cl := newClient(s.T(), s.mockConfig)
-	s.T().Run("OK", func(t *testing.T) {
+	s.T().Run("Create OK", func(t *testing.T) {
 		defer gock.OffAll()
 
 		gock.New("https://us-south.appid.cloud.ibm.com").
@@ -59,5 +59,18 @@ func (s *TestUserSuite) TestCreateCloudDirectoryUser() {
 		assert.Equal(t, "user@domain.com", user.Email())
 		assert.Equal(t, "128a7445-1371-4cb2-8656-3e4590df132e", user.ProfileID)
 		assert.NotEmpty(t, user.Password)
+	})
+
+	s.T().Run("Delete OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://us-south.appid.cloud.ibm.com").
+			Delete("management/v4/9876543210/cloud_directory/remove/13579").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(204)
+
+		err := cl.DeleteCloudDirectoryUser("13579")
+		require.NoError(t, err)
 	})
 }
