@@ -1,9 +1,9 @@
 package cluster
 
 import (
-	"fmt"
-	"hash/fnv"
 	"time"
+
+	"github.com/codeready-toolchain/devcluster/pkg/auth"
 
 	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
@@ -230,18 +230,9 @@ func expired(r Request) bool {
 	return time.Unix(r.Created, 0).Add(time.Duration(r.DeleteInHours) * time.Hour).Before(time.Now())
 }
 
-func hash(s string) uint32 {
-	h := fnv.New32a()
-	_, err := h.Write([]byte(s))
-	if err != nil {
-		log.Error(nil, err, "unable to generate cluster name")
-	}
-	return h.Sum32()
-}
-
 // provisionNewCluster creates one new cluster
 func (s *ClusterService) provisionNewCluster(r Request) error {
-	name := fmt.Sprintf("redhat-%d", hash(uuid.NewV4().String()))
+	name := auth.GenerateShortID("redhat")
 	var id string
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.

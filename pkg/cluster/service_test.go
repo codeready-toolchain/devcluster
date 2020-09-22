@@ -327,3 +327,11 @@ func (c *MockConfig) GetIBMCloudAPIKey() string {
 func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
 	return 1
 }
+
+func (c *MockConfig) GetIBMCloudAccountID() string {
+	return "0123456789"
+}
+
+func (c *MockConfig) GetIBMCloudTenantID() string {
+	return "9876543210"
+}

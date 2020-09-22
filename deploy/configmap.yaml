@@ -1,0 +1,33 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: devcluster
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: devcluster
+      namespace: ${NAMESPACE}
+    type: Opaque
+    data:
+      environment: ${ENVIRONMENT}
+      auth_client.library_url: ${AUTH_CLIENT_LIBRARY_URL}
+      auth_client.config_raw: ${AUTH_CLIENT_CONFIG_RAW}
+      auth_client.public_keys_url: ${AUTH_CLIENT_PUBLIC_KEYS_URL}
+      ibmcloud.account_id: ${IBMCLOUD_ACCOUNT_ID}
+      ibmcloud.tenant_id: ${IBMCLOUD_TENANT_ID}
+parameters:
+  - name: NAMESPACE
+    value: 'devcluster'
+  - name: ENVIRONMENT
+    value: 'prod' # prod, stage, e2e-tests, dev, etc
+  - name: AUTH_CLIENT_LIBRARY_URL
+    value: '' #use default value from reg-service configuration
+  - name: AUTH_CLIENT_CONFIG_RAW
+    value: '' #use default value from reg-service configuration
+  - name: AUTH_CLIENT_PUBLIC_KEYS_URL
+    value: '' #use default value from reg-service configuration
+  - name: IBMCLOUD_ACCOUNT_ID
+    value: ''
+  - name: IBMCLOUD_TENANT_ID
+    value: ''

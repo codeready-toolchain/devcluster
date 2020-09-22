@@ -47,15 +47,19 @@ deploy-dev: create-namespace build docker-image-dev docker-push-dev apply-resour
 .PHONY: apply-resources
 ## Apply DevCluster resources
 apply-resources:
+    # Try to create a secret. Will fail if it already exists. So we don't override the existing one.
+	$(Q)-oc process -f ./deploy/secret.yaml \
+        -p NAMESPACE=${NAMESPACE} \
+        | oc create -f -
+    # Try to create a config map. Will fail if it already exists. So we don't override the existing one.
+	$(Q)-oc process -f ./deploy/configmap.yaml \
+        -p NAMESPACE=${NAMESPACE} \
+        | oc create -f -
 	$(Q)oc process -f ./deploy/devcluster.yaml \
         -p IMAGE=${IMAGE_DEV} \
         -p ENVIRONMENT=dev \
         -p NAMESPACE=${NAMESPACE} \
         | oc apply -f -
-    # Try to create a secret. Will fail if it already exists. So we don't override the existing one.
-	$(Q)-oc process -f ./deploy/secret.yaml \
-        -p NAMESPACE=${NAMESPACE} \
-        | oc create -f -
 
 .PHONY: print-route
 print-route:

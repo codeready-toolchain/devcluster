@@ -95,9 +95,14 @@ const (
 	// DefaultNamespace is the default k8s namespace to use.
 	DefaultNamespace = "devcluster"
 
+	// General IBM Cloud configuration
 	varIBMCloudAPIKey             = "ibmcloud.apikey"
 	varIBMCloudApiCallRetrySec    = "ibmcloud.api_call_retry_sec"
 	DefaultBMCloudApiCallRetrySec = 30
+
+	// Tenant cluster authN
+	varIBMCloudAccountID = "ibmcloud.account_id"
+	varIBMCloudTenantID  = "ibmcloud.tenant_id"
 
 	varMongodbConnectionString = "mongodb.connection_string"
 	varMongodbDatabase         = "mongodb.database"
@@ -241,6 +246,16 @@ func (c *Config) GetNamespace() string {
 // GetIBMCloudAPIKey returns the IBM Cloud API Key
 func (c *Config) GetIBMCloudAPIKey() string {
 	return c.v.GetString(varIBMCloudAPIKey)
+}
+
+// GetIBMCloudAccountID returns the main/parent IBM Cloud Account ID
+func (c *Config) GetIBMCloudAccountID() string {
+	return c.v.GetString(varIBMCloudAccountID)
+}
+
+// GetIBMCloudTenantID returns the Cloud Directory ID
+func (c *Config) GetIBMCloudTenantID() string {
+	return c.v.GetString(varIBMCloudTenantID)
 }
 
 func (c *Config) GetMongodbConnectionString() string {

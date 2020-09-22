@@ -77,6 +77,16 @@ objects:
                     secretKeyRef:
                       name: devcluster
                       key: ibmcloud.apikey
+                - name: DEVCLUSTER_IBMCLOUD_ACCOUNT_ID
+                  valueFrom:
+                    configMapKeyRef:
+                      name: devcluster
+                      key: ibmcloud.account_id
+                - name: DEVCLUSTER_IBMCLOUD_TENANT_ID
+                  valueFrom:
+                    configMapKeyRef:
+                      name: devcluster
+                      key: ibmcloud.tenant_id
                 - name: DEVCLUSTER_MONGODB_CONNECTION_STRING
                   valueFrom:
                     secretKeyRef:
@@ -117,17 +127,6 @@ objects:
       tls:
         termination: edge
       wildcardPolicy: None
-  - kind: ConfigMap
-    apiVersion: v1
-    metadata:
-      name: devcluster
-      namespace: ${NAMESPACE}
-    type: Opaque
-    data:
-      environment: ${ENVIRONMENT}
-      auth_client.library_url: ${AUTH_CLIENT_LIBRARY_URL}
-      auth_client.config_raw: ${AUTH_CLIENT_CONFIG_RAW}
-      auth_client.public_keys_url: ${AUTH_CLIENT_PUBLIC_KEYS_URL}
 parameters:
   - name: NAMESPACE
     value: 'devcluster'
@@ -135,11 +134,3 @@ parameters:
     value: quay.io/codeready-toolchain/devcluster:latest
   - name: REPLICAS
     value: '1'
-  - name: ENVIRONMENT
-    value: 'prod' # prod, stage, e2e-tests, dev, etc
-  - name: AUTH_CLIENT_LIBRARY_URL
-    value: '' #use default value from reg-service configuration
-  - name: AUTH_CLIENT_CONFIG_RAW
-    value: '' #use default value from reg-service configuration
-  - name: AUTH_CLIENT_PUBLIC_KEYS_URL
-    value: '' #use default value from reg-service configuration
