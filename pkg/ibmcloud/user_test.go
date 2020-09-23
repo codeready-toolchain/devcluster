@@ -174,4 +174,17 @@ func (s *TestUserSuite) TestIAMUser() {
 		_, err := cl.GetIAMUserByUserID("dev-cluster-user-5193")
 		assert.Equal(t, devclustererr.NewInternalServerError("too many IAM users with user_id=dev-cluster-user-5193", iamMultipleUsersExample), err)
 	})
+
+	s.T().Run("Delete IAM User OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://user-management.cloud.ibm.com").
+			Delete(fmt.Sprintf("v2/accounts/%s/users/08531", s.mockConfig.GetIBMCloudAccountID())).
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(204)
+
+		err := cl.DeleteIAMUser("08531")
+		require.NoError(t, err)
+	})
 }

@@ -153,6 +153,30 @@ func (c *Client) GetIAMUserByUserID(userID string) (*IAMUser, error) {
 	return &iamRes.Resources[0], nil
 }
 
+// DeleteIAMUser deletes the AIM user with the corresponding id (IAMUser.ID).
+func (c *Client) DeleteIAMUser(id string) error {
+	token, err := c.Token()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://user-management.cloud.ibm.com/v2/accounts/%s/users/%s", c.config.GetIBMCloudAccountID(), id), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to delete IAM user")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusNoContent {
+		return errors.Errorf("unable to delete IAM user. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	return nil
+}
+
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func generatePassword(n int) string {
