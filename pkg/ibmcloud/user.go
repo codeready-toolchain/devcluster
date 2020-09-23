@@ -235,6 +235,29 @@ func (c *Client) CreateAccessPolicy(accountID, iamID, clusterID string) (string,
 	return idObj.ID, nil
 }
 
+// DeleteAccessPolicy deletes the access policy with the specified ID.
+func (c *Client) DeleteAccessPolicy(id string) error {
+	token, err := c.Token()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://iam.cloud.ibm.com/v1/policies/%s", id), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "unable to delete access policy")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusNoContent {
+		return errors.Errorf("unable to delete access policy. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+	return nil
+}
+
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func generatePassword(n int) string {

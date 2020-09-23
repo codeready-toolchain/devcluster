@@ -208,4 +208,17 @@ func (s *TestUserSuite) TestAccessPolicy() {
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})
+
+	s.T().Run("Delete OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://iam.cloud.ibm.com").
+			Delete("v1/policies/1029384756").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(204)
+
+		err := cl.DeleteAccessPolicy("1029384756")
+		require.NoError(t, err)
+	})
 }
