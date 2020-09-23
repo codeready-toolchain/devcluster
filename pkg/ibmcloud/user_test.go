@@ -188,3 +188,24 @@ func (s *TestUserSuite) TestIAMUser() {
 		require.NoError(t, err)
 	})
 }
+
+func (s *TestUserSuite) TestAccessPolicy() {
+	cl := newClient(s.T(), s.mockConfig)
+	s.T().Run("Create OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://iam.cloud.ibm.com").
+			Post("v1/policies").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			MatchHeader("Content-Type", "application/json").
+			JSON(fmt.Sprintf(AccessPolicyTemplate, "12345", "54321", "135790")).
+			Persist().
+			Reply(201).
+			BodyString(`{"id": "some-id"}`)
+
+		id, err := cl.CreateAccessPolicy("54321", "12345", "135790")
+		require.NoError(t, err)
+		assert.Equal(t, "some-id", id)
+	})
+}

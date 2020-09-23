@@ -177,6 +177,64 @@ func (c *Client) DeleteIAMUser(id string) error {
 	return nil
 }
 
+const AccessPolicyTemplate = `
+{
+   "type": "access",
+   "subjects": [{"attributes": [{"name": "iam_id", "value": "%s"}]}],
+   "roles": [
+       {"role_id": "crn:v1:bluemix:public:iam::::role:Viewer"},
+       {"role_id": "crn:v1:bluemix:public:iam::::serviceRole:Manager"}
+   ],
+   "resources": [
+       {
+           "attributes": [
+               {"name": "accountId", "operator": "stringEquals", "value": "%s"},
+               {"name": "serviceName", "value": "containers-kubernetes"},
+               {"name": "serviceInstance", "value": "%s"}
+           ]
+       }
+   ]
+}`
+
+type AccessPolicy struct {
+	TotalResults int       `json:"total_results"`
+	Limit        int       `json:"limit"`
+	Resources    []IAMUser `json:"resources"`
+}
+
+// CreateAccessPolicy creates an access policy for the cluster and assigns it to the user.
+// Returns the id of the created policy.
+func (c *Client) CreateAccessPolicy(accountID, iamID, clusterID string) (string, error) {
+	token, err := c.Token()
+	if err != nil {
+		return "", err
+	}
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(AccessPolicyTemplate, iamID, accountID, clusterID)))
+	req, err := http.NewRequest("POST", "https://iam.cloud.ibm.com/v1/policies", body)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create access policy")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusCreated {
+		return "", errors.Errorf("unable to create access policy. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var idObj ID
+	err = json.Unmarshal([]byte(bodyString), &idObj)
+	if err != nil {
+		return "", errors.Wrapf(err, "error when unmarshal json with access policy ID %s ", bodyString)
+	}
+	return idObj.ID, nil
+}
+
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func generatePassword(n int) string {
