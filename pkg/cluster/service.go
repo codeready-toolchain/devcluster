@@ -53,6 +53,16 @@ type Cluster struct {
 	Error     string
 }
 
+type User struct {
+	ID            string // user_id & username
+	CloudDirectID string
+	IAMID         string
+	Email         string
+	Password      string
+	ClusterID     string
+	PolicyID      string
+}
+
 var DefaultClusterService *ClusterService
 
 // ClusterService represents a registry of all cluster resources
@@ -302,6 +312,33 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 		time.Sleep(time.Duration(s.Config.GetIBMCloudApiCallRetrySec()) * time.Second)
 	}
 	return nil
+}
+
+// CreateUsers creates n number of users
+func (s *ClusterService) CreateUsers(n int) ([]User, error) {
+	users := make([]User, 0, 0)
+	for i := 0; i < n; i++ {
+		cdu, err := s.IbmCloudClient.CreateCloudDirectoryUser()
+		if err != nil {
+			return nil, err
+		}
+		user := User{
+			ID:            cdu.Username,
+			CloudDirectID: cdu.ID,
+			Email:         cdu.Email(),
+			Password:      cdu.Password,
+		}
+		err = insertUser(user)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+func (s *ClusterService) Users() ([]User, error) {
+	return getAllUsers()
 }
 
 func clusterReady(c Cluster) bool {

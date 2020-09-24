@@ -32,6 +32,13 @@ type ICClient interface {
 	CreateCluster(name, zone string, noSubnet bool) (string, error)
 	GetCluster(id string) (*Cluster, error)
 	DeleteCluster(id string) error
+	CreateCloudDirectoryUser() (*CloudDirectoryUser, error)
+	UpdateCloudDirectoryUserPassword(id string) (*CloudDirectoryUser, error)
+	DeleteCloudDirectoryUser(id string) error
+	GetIAMUserByUserID(userID string) (*IAMUser, error)
+	DeleteIAMUser(id string) error
+	CreateAccessPolicy(accountID, iamID, clusterID string) (string, error)
+	DeleteAccessPolicy(id string) error
 }
 
 type Client struct {

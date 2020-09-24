@@ -24,6 +24,9 @@ func getRequest(id string) (*Request, error) {
 		context.Background(),
 		bson.D{{"_id", id}},
 	)
+	if res == nil {
+		return nil, errors.New(fmt.Sprintf("unable to find Request with such ID: %s", id))
+	}
 	var m bson.M
 	err := res.Decode(&m)
 	if err != nil {
@@ -126,6 +129,9 @@ func getCluster(id string) (*Cluster, error) {
 		context.Background(),
 		bson.D{{"_id", id}},
 	)
+	if res == nil {
+		return nil, errors.New(fmt.Sprintf("unable to find Cluster with such ID: %s", id))
+	}
 	var m bson.M
 	err := res.Decode(&m)
 	if err != nil {
@@ -158,6 +164,70 @@ func getClusters(requestID string) ([]Cluster, error) {
 		clusters = append(clusters, convertBSONToCluster(m))
 	}
 	return clusters, err
+}
+
+// getFreeUser returns the first found user with no cluster_id set
+func getUserWithoutCluster() (*User, error) {
+	return getUserByClusterID("")
+}
+
+// getUserByClusterID returns the first found user with the given cluster_id
+func getUserByClusterID(clusterID string) (*User, error) {
+	res := mongodb.Users().FindOne(
+		context.Background(),
+		bson.D{{"cluster_id", clusterID}},
+	)
+	if res == nil {
+		return nil, errors.New(fmt.Sprintf("unable to find User with cluster_id: %s", clusterID))
+	}
+	var m bson.M
+	err := res.Decode(&m)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, fmt.Sprintf("no User with cluster_id %s found", clusterID))
+	}
+	u := convertBSONToUser(m)
+	return &u, nil
+}
+
+func getAllUsers() ([]User, error) {
+	return getUsers(bson.D{})
+}
+
+func getUsers(d bson.D) ([]User, error) {
+	users := make([]User, 0, 0)
+	cursor, err := mongodb.Users().Find(context.Background(), d)
+	if err != nil {
+		return users, errors.Wrap(err, "unable to load users from mongo")
+	}
+	var usrs []bson.M
+	if err = cursor.All(context.Background(), &usrs); err != nil {
+		return users, errors.Wrap(err, "unable to load users from mongo")
+	}
+	for _, m := range usrs {
+		users = append(users, convertBSONToUser(m))
+	}
+	return users, err
+}
+
+func replaceUser(u User) error {
+	opts := options.Replace().SetUpsert(true)
+	_, err := mongodb.Users().ReplaceOne(
+		context.Background(),
+		bson.D{
+			{"_id", u.ID},
+		},
+		convertUserToBSON(u),
+		opts,
+	)
+	return errors.Wrap(err, "unable to replace user")
+}
+
+func insertUser(u User) error {
+	_, err := mongodb.Users().InsertOne(context.Background(), convertUserToBSON(u))
+	return errors.Wrap(err, "unable to insert user")
 }
 
 func convertBSONToRequest(m bson.M) Request {
@@ -207,5 +277,29 @@ func convertClusterToBSON(c Cluster) bson.D {
 		{"error", c.Error},
 		{"url", c.URL},
 		{"request_id", c.RequestID},
+	}
+}
+
+func convertBSONToUser(m bson.M) User {
+	return User{
+		ID:            string(fmt.Sprintf("%v", m["_id"])),
+		CloudDirectID: string(fmt.Sprintf("%v", m["cloud_direct_id"])),
+		IAMID:         string(fmt.Sprintf("%v", m["iam_id"])),
+		Email:         string(fmt.Sprintf("%v", m["email"])),
+		Password:      string(fmt.Sprintf("%v", m["password"])),
+		ClusterID:     string(fmt.Sprintf("%v", m["cluster_id"])),
+		PolicyID:      string(fmt.Sprintf("%v", m["policy_id"])),
+	}
+}
+
+func convertUserToBSON(u User) bson.D {
+	return bson.D{
+		{"_id", u.ID},
+		{"cloud_direct_id", u.CloudDirectID},
+		{"iam_id", u.IAMID},
+		{"email", u.Email},
+		{"password", u.Password},
+		{"cluster_id", u.ClusterID},
+		{"policy_id", u.PolicyID},
 	}
 }

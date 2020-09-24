@@ -33,7 +33,7 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	ns := ctx.PostForm("number-of-clusters")
 	n, err := strconv.Atoi(ns)
 	if err != nil {
-		log.Error(ctx, err, "error requesting clusters; number of clusters param is missing or invalid")
+		log.Error(ctx, err, "error requesting clusters; number-of-clusters param is missing or invalid")
 		devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting clusters; number of clusters param is missing or invalid")
 		return
 	}
@@ -61,6 +61,7 @@ func (r *ClusterRequest) PostHandler(ctx *gin.Context) {
 	if err != nil {
 		log.Error(ctx, err, "error requesting clusters")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting clusters")
+		return
 	}
 	ctx.JSON(http.StatusAccepted, req)
 }
@@ -71,6 +72,7 @@ func (r *ClusterRequest) GetHandler(ctx *gin.Context) {
 	if err != nil {
 		log.Error(ctx, err, "error fetching cluster requests")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster requests")
+		return
 	}
 	ctx.JSON(http.StatusOK, reqs)
 }
@@ -82,11 +84,13 @@ func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
 	if err != nil {
 		log.Error(ctx, err, "error fetching cluster request")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching cluster request")
+		return
 	}
 	if req == nil { // Not Found
 		err = errors.New(fmt.Sprintf("request with id=%s not found", reqID))
 		log.Error(ctx, err, "request not found")
 		devclustererrors.AbortWithError(ctx, http.StatusNotFound, err, "request not found")
+		return
 	}
 	ctx.JSON(http.StatusOK, req)
 }
@@ -97,6 +101,7 @@ func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
 	if err != nil {
 		log.Error(ctx, err, "error fetching zones")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching zones")
+		return
 	}
 	ctx.JSON(http.StatusOK, zones)
 }
@@ -108,6 +113,39 @@ func (r *ClusterRequest) DeleteHandlerCluster(ctx *gin.Context) {
 	if err != nil {
 		log.Error(ctx, err, "error deleting cluster")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error deleting cluster")
+		return
 	}
 	ctx.JSON(http.StatusNoContent, nil)
+}
+
+// PostUsersHandler creates N number of users and returns them as an array (JSON)
+func (r *ClusterRequest) PostUsersHandler(ctx *gin.Context) {
+	ns := ctx.PostForm("number-of-users")
+	n, err := strconv.Atoi(ns)
+	if err != nil {
+		log.Error(ctx, err, "error requesting users; number-of-users param is missing or invalid")
+		devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting users; number-of-users param is missing or invalid")
+		return
+	}
+
+	log.Infof(ctx, "Requested creating %s users", ns)
+	users, err := cluster.DefaultClusterService.CreateUsers(n)
+	if err != nil {
+		log.Error(ctx, err, "error requesting users")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting users")
+		return
+	}
+	ctx.JSON(http.StatusAccepted, users)
+}
+
+// GetUsersHandler returns all users as an array (JSON)
+func (r *ClusterRequest) GetUsersHandler(ctx *gin.Context) {
+	log.Infof(ctx, "Obtaining users")
+	users, err := cluster.DefaultClusterService.Users()
+	if err != nil {
+		log.Error(ctx, err, "error obtaining users")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error obtaining users")
+		return
+	}
+	ctx.JSON(http.StatusAccepted, users)
 }

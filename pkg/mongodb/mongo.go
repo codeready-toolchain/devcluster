@@ -49,3 +49,7 @@ func ClusterRequests() *mongo.Collection {
 func Clusters() *mongo.Collection {
 	return Devcluster().Collection("clusters")
 }
+
+func Users() *mongo.Collection {
+	return Devcluster().Collection("users")
+}

@@ -88,6 +88,8 @@ func (srv *DevClusterServer) SetupRoutes() error {
 		securedV1.GET("/cluster-req/:id", clusterReqCtrl.GetHandlerClusterReq)
 		securedV1.GET("/zones", clusterReqCtrl.GetHandlerZones)
 		securedV1.DELETE("/cluster/:id", clusterReqCtrl.DeleteHandlerCluster)
+		securedV1.POST("/users", clusterReqCtrl.PostUsersHandler)
+		securedV1.GET("/users", clusterReqCtrl.GetUsersHandler)
 
 		// if we are in testing mode, we also add a secured health route for testing
 		if srv.Config().IsTestingMode() {
