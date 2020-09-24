@@ -76,6 +76,75 @@ func (c *Client) CreateCloudDirectoryUser() (*CloudDirectoryUser, error) {
 	return &userObj, nil
 }
 
+// getCloudDirectoryUser fetches the user by ID
+// Note: The returned user struct does not have password set!
+func (c *Client) getCloudDirectoryUser(id string) (*CloudDirectoryUser, error) {
+	token, err := c.Token()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s.appid.cloud.ibm.com/management/v4/%s/cloud_directory/Users/%s", apiRegion, c.config.GetIBMCloudTenantID(), id), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cloud directory user")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unable to get cloud directory user. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var userObj CloudDirectoryUser
+	err = json.Unmarshal([]byte(bodyString), &userObj)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when unmarshal json with cloud directory user: %s ", bodyString)
+	}
+	return &userObj, nil
+}
+
+// UpdateCloudDirectoryUserPassword sets a new generated password for the user with the given ID
+func (c *Client) UpdateCloudDirectoryUserPassword(id string) (*CloudDirectoryUser, error) {
+	token, err := c.Token()
+	if err != nil {
+		return nil, err
+	}
+	user, err := c.getCloudDirectoryUser(id)
+	if err != nil {
+		return nil, err
+	}
+	password := generatePassword(8)
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(CloudDirectoryUserTemplate, user.Email(), user.Username, password)))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://%s.appid.cloud.ibm.com/management/v4/%s/cloud_directory/Users/%s", apiRegion, c.config.GetIBMCloudTenantID(), id), body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to update cloud directory user")
+	}
+	defer rest.CloseResponse(res)
+	bodyString := rest.ReadBody(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unable to update cloud directory user. Response status: %s. Response body: %s", res.Status, bodyString)
+	}
+
+	var userObj CloudDirectoryUser
+	err = json.Unmarshal([]byte(bodyString), &userObj)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when unmarshal json with cloud directory user: %s ", bodyString)
+	}
+	userObj.Password = password // Set the generated password before returning the user struct
+	return &userObj, nil
+}
+
 // DeleteCloudDirectoryUser deletes the cloud directory user with the given ID.
 func (c *Client) DeleteCloudDirectoryUser(id string) error {
 	token, err := c.Token()

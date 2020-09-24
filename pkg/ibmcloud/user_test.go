@@ -63,6 +63,44 @@ func (s *TestUserSuite) TestCloudDirectoryUser() {
 		assert.NotEmpty(t, user.Password)
 	})
 
+	s.T().Run("Get and Update OK", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://us-south.appid.cloud.ibm.com").
+			Get("management/v4/9876543210/cloud_directory/Users/13579").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(cloudDirectoryUserExample)
+
+		gock.New("https://us-south.appid.cloud.ibm.com").
+			Put("management/v4/9876543210/cloud_directory/Users/13579").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Content-Type", "application/json").
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(cloudDirectoryUserExample)
+
+		// Get the user
+		user, err := cl.getCloudDirectoryUser("13579")
+		require.NoError(t, err)
+		assert.Equal(t, "1029a9cb-7b8a-4d18-ba91-fa4830ae0860", user.ID)
+		assert.Equal(t, "myUsername", user.Username)
+		assert.Equal(t, "user@domain.com", user.Email())
+		assert.Equal(t, "128a7445-1371-4cb2-8656-3e4590df132e", user.ProfileID)
+
+		// Now update the user and check that the password was changed.
+		user, err = cl.UpdateCloudDirectoryUserPassword("13579")
+		require.NoError(t, err)
+		assert.Equal(t, "1029a9cb-7b8a-4d18-ba91-fa4830ae0860", user.ID)
+		assert.Equal(t, "myUsername", user.Username)
+		assert.Equal(t, "user@domain.com", user.Email())
+		assert.Equal(t, "128a7445-1371-4cb2-8656-3e4590df132e", user.ProfileID)
+		assert.NotEmpty(t, user.Password)
+	})
+
 	s.T().Run("Delete OK", func(t *testing.T) {
 		defer gock.OffAll()
 
