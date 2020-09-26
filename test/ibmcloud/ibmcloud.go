@@ -27,6 +27,9 @@ func NewMockIBMCloudClient() *MockIBMCloudClient {
 	return &MockIBMCloudClient{
 		clustersByName: make(map[string]*ibmcloud.Cluster),
 		clustersByID:   make(map[string]*ibmcloud.Cluster),
+		cldUserByID:    make(map[string]*ibmcloud.CloudDirectoryUser),
+		aimUserByID:    make(map[string]*ibmcloud.IAMUser),
+		policyByID:     make(map[string]*string),
 	}
 }
 

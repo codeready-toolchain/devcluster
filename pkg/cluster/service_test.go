@@ -176,6 +176,39 @@ func (s *TestIntegrationSuite) TestRequestService() {
 	})
 }
 
+func (s *TestIntegrationSuite) TestUsers() {
+	s.Run("request new users", func() {
+		mockClient := ibmcloudmock.NewMockIBMCloudClient()
+		service := &cluster.ClusterService{
+			IbmCloudClient: mockClient,
+			Config: &MockConfig{
+				config: s.Config,
+			},
+		}
+
+		assertUsers := func(users []cluster.User, err error) {
+			require.NoError(s.T(), err)
+			require.Len(s.T(), users, 3)
+			for i := 0; i < 3; i++ {
+				assert.Equal(s.T(), fmt.Sprintf("rh-dev-%d", 1001+i), users[i].ID)
+				assert.NotEmpty(s.T(), users[i].Email)
+				assert.NotEmpty(s.T(), users[i].Password)
+				assert.NotEmpty(s.T(), users[i].CloudDirectID)
+				assert.Empty(s.T(), users[i].PolicyID)
+				assert.Empty(s.T(), users[i].ClusterID)
+			}
+		}
+
+		// Request 3 new users and assert the result
+		assertUsers(service.CreateUsers(3, 1000))
+
+		s.Run("get users", func() {
+			// assert the available users
+			assertUsers(service.Users())
+		})
+	})
+}
+
 func (s *TestIntegrationSuite) provisionClusters(n, deleteIn int) (*ibmcloudmock.MockIBMCloudClient, *cluster.ClusterService, cluster.Request, cluster.RequestWithClusters) {
 	mockClient := ibmcloudmock.NewMockIBMCloudClient()
 	service := &cluster.ClusterService{
