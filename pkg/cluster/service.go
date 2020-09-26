@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/codeready-toolchain/devcluster/pkg/auth"
@@ -54,9 +55,8 @@ type Cluster struct {
 }
 
 type User struct {
-	ID            string // user_id & username
-	CloudDirectID string
-	IAMID         string
+	ID            string // <iam_object>.user_id & <cloud_direct_object>.username
+	CloudDirectID string // <cloud_direct_object>.id
 	Email         string
 	Password      string
 	ClusterID     string
@@ -315,10 +315,12 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 }
 
 // CreateUsers creates n number of users
-func (s *ClusterService) CreateUsers(n int) ([]User, error) {
+// For example if n == 3 and startIndex == 1000 then the following users will be created:
+// rd-dev-1001, rd-dev-1002, rd-dev-1003
+func (s *ClusterService) CreateUsers(n, startIndex int) ([]User, error) {
 	users := make([]User, 0, 0)
-	for i := 0; i < n; i++ {
-		cdu, err := s.IbmCloudClient.CreateCloudDirectoryUser()
+	for i := startIndex + 1; i <= startIndex+n; i++ {
+		cdu, err := s.IbmCloudClient.CreateCloudDirectoryUser(fmt.Sprintf("rh-dev-%d", i))
 		if err != nil {
 			return nil, err
 		}

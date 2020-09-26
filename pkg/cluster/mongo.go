@@ -284,7 +284,6 @@ func convertBSONToUser(m bson.M) User {
 	return User{
 		ID:            string(fmt.Sprintf("%v", m["_id"])),
 		CloudDirectID: string(fmt.Sprintf("%v", m["cloud_direct_id"])),
-		IAMID:         string(fmt.Sprintf("%v", m["iam_id"])),
 		Email:         string(fmt.Sprintf("%v", m["email"])),
 		Password:      string(fmt.Sprintf("%v", m["password"])),
 		ClusterID:     string(fmt.Sprintf("%v", m["cluster_id"])),
@@ -296,7 +295,6 @@ func convertUserToBSON(u User) bson.D {
 	return bson.D{
 		{"_id", u.ID},
 		{"cloud_direct_id", u.CloudDirectID},
-		{"iam_id", u.IAMID},
 		{"email", u.Email},
 		{"password", u.Password},
 		{"cluster_id", u.ClusterID},

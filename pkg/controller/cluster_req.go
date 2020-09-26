@@ -128,8 +128,19 @@ func (r *ClusterRequest) PostUsersHandler(ctx *gin.Context) {
 		return
 	}
 
+	sIndex := ctx.PostForm("start-index")
+	var startIndex int
+	if sIndex != "" {
+		startIndex, err = strconv.Atoi(sIndex)
+		if err != nil {
+			log.Error(ctx, err, "error requesting users; start-index param is not an integer")
+			devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error requesting users; start-index param is not an integer")
+			return
+		}
+	}
+
 	log.Infof(ctx, "Requested creating %s users", ns)
-	users, err := cluster.DefaultClusterService.CreateUsers(n)
+	users, err := cluster.DefaultClusterService.CreateUsers(n, startIndex)
 	if err != nil {
 		log.Error(ctx, err, "error requesting users")
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error requesting users")

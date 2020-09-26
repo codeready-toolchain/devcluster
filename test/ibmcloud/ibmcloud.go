@@ -13,9 +13,14 @@ import (
 )
 
 type MockIBMCloudClient struct {
-	mux            sync.RWMutex
+	clusterMux     sync.RWMutex
+	cldUserMux     sync.RWMutex
+	policyMux      sync.RWMutex
 	clustersByID   map[string]*ibmcloud.Cluster
 	clustersByName map[string]*ibmcloud.Cluster
+	cldUserByID    map[string]*ibmcloud.CloudDirectoryUser
+	aimUserByID    map[string]*ibmcloud.IAMUser
+	policyByID     map[string]*string
 }
 
 func NewMockIBMCloudClient() *MockIBMCloudClient {
@@ -45,13 +50,13 @@ func (c *MockIBMCloudClient) GetVlans(zone string) ([]ibmcloud.Vlan, error) {
 	return []ibmcloud.Vlan{}, nil
 }
 
-func (c *MockIBMCloudClient) CreateCluster(name, zone string, noSubnet bool) (string, error) {
-	defer c.mux.Unlock()
-	c.mux.Lock()
+func (c *MockIBMCloudClient) CreateCluster(name, zone string, _ bool) (string, error) {
+	defer c.clusterMux.Unlock()
+	c.clusterMux.Lock()
 	if c.clustersByName[name] != nil {
 		return "", errors.New("cluster already exist")
 	}
-	newCluster := &ibmcloud.Cluster{
+	cluster := &ibmcloud.Cluster{
 		ID:          uuid.NewV4().String(),
 		Name:        name,
 		Region:      zone,
@@ -59,14 +64,14 @@ func (c *MockIBMCloudClient) CreateCluster(name, zone string, noSubnet bool) (st
 		State:       "deploying",
 		Ingress:     ibmcloud.Ingress{},
 	}
-	c.clustersByName[name] = newCluster
-	c.clustersByID[newCluster.ID] = newCluster
-	return newCluster.ID, nil
+	c.clustersByName[name] = cluster
+	c.clustersByID[cluster.ID] = cluster
+	return cluster.ID, nil
 }
 
 func (c *MockIBMCloudClient) GetCluster(id string) (*ibmcloud.Cluster, error) {
-	defer c.mux.RUnlock()
-	c.mux.RLock()
+	defer c.clusterMux.RUnlock()
+	c.clusterMux.RLock()
 	clst := c.clustersByID[id]
 	if clst == nil {
 		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
@@ -75,8 +80,8 @@ func (c *MockIBMCloudClient) GetCluster(id string) (*ibmcloud.Cluster, error) {
 }
 
 func (c *MockIBMCloudClient) DeleteCluster(id string) error {
-	defer c.mux.Unlock()
-	c.mux.Lock()
+	defer c.clusterMux.Unlock()
+	c.clusterMux.Lock()
 	cluster := c.clustersByID[id]
 	if cluster != nil {
 		c.clustersByID[id] = nil
@@ -88,13 +93,66 @@ func (c *MockIBMCloudClient) DeleteCluster(id string) error {
 }
 
 func (c *MockIBMCloudClient) UpdateCluster(cluster ibmcloud.Cluster) error {
-	defer c.mux.Unlock()
-	c.mux.Lock()
+	defer c.clusterMux.Unlock()
+	c.clusterMux.Lock()
 	found := c.clustersByID[cluster.ID]
 	if found == nil {
 		return errors.New("cluster not found")
 	}
 	found.State = cluster.State
 	found.Ingress = cluster.Ingress
+	return nil
+}
+
+func (c *MockIBMCloudClient) CreateCloudDirectoryUser(username string) (*ibmcloud.CloudDirectoryUser, error) {
+	defer c.cldUserMux.Unlock()
+	c.cldUserMux.Lock()
+	user := &ibmcloud.CloudDirectoryUser{
+		ID:        uuid.NewV4().String(),
+		Username:  username,
+		Emails:    []ibmcloud.Value{{uuid.NewV4().String()}},
+		ProfileID: uuid.NewV4().String(),
+		Password:  uuid.NewV4().String(),
+	}
+	c.cldUserByID[user.ID] = user
+	aimUser := &ibmcloud.IAMUser{
+		ID:     uuid.NewV4().String(),
+		IAMID:  uuid.NewV4().String(),
+		UserID: user.Username,
+		Email:  user.Email(),
+	}
+	c.aimUserByID[aimUser.UserID] = aimUser
+	return user, nil
+}
+
+func (c *MockIBMCloudClient) UpdateCloudDirectoryUserPassword(id string) (*ibmcloud.CloudDirectoryUser, error) {
+	defer c.cldUserMux.Unlock()
+	c.cldUserMux.Lock()
+	found := c.cldUserByID[id]
+	if found == nil {
+		return nil, errors.New("user not found")
+	}
+	found.Password = uuid.NewV4().String()
+	return found, nil
+}
+
+func (c *MockIBMCloudClient) GetIAMUserByUserID(userID string) (*ibmcloud.IAMUser, error) {
+	defer c.cldUserMux.RUnlock()
+	c.cldUserMux.RLock()
+	return c.aimUserByID[userID], nil
+}
+
+func (c *MockIBMCloudClient) CreateAccessPolicy(_, _, _ string) (string, error) {
+	defer c.policyMux.Unlock()
+	c.policyMux.Lock()
+	id := uuid.NewV4().String()
+	c.policyByID[id] = &id
+	return id, nil
+}
+
+func (c *MockIBMCloudClient) DeleteAccessPolicy(id string) error {
+	defer c.policyMux.Unlock()
+	c.policyMux.Lock()
+	c.policyByID[id] = nil
 	return nil
 }

@@ -54,7 +54,7 @@ func (s *TestUserSuite) TestCloudDirectoryUser() {
 			Reply(201).
 			BodyString(cloudDirectoryUserExample)
 
-		user, err := cl.CreateCloudDirectoryUser()
+		user, err := cl.CreateCloudDirectoryUser("myUsername")
 		require.NoError(t, err)
 		assert.Equal(t, "1029a9cb-7b8a-4d18-ba91-fa4830ae0860", user.ID)
 		assert.Equal(t, "myUsername", user.Username)
@@ -232,17 +232,25 @@ func (s *TestUserSuite) TestAccessPolicy() {
 	s.T().Run("Create OK", func(t *testing.T) {
 		defer gock.OffAll()
 
+		gock.New("https://user-management.cloud.ibm.com").
+			Get(fmt.Sprintf("v2/accounts/%s/users", s.mockConfig.GetIBMCloudAccountID())).
+			MatchParam("user_id", "dev-cluster-user-5193").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			MatchHeader("Accept", "application/json").
+			Persist().
+			Reply(200).
+			BodyString(iamSingleUserExample)
 		gock.New("https://iam.cloud.ibm.com").
 			Post("v1/policies").
 			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
 			MatchHeader("Accept", "application/json").
 			MatchHeader("Content-Type", "application/json").
-			JSON(fmt.Sprintf(AccessPolicyTemplate, "12345", "54321", "135790")).
+			JSON(fmt.Sprintf(AccessPolicyTemplate, "5drS2pDaiG-a3659d3e-24e5-4973-b55a-68177850cae9", s.mockConfig.GetIBMCloudAccountID(), "135790")).
 			Persist().
 			Reply(201).
 			BodyString(`{"id": "some-id"}`)
 
-		id, err := cl.CreateAccessPolicy("54321", "12345", "135790")
+		id, err := cl.CreateAccessPolicy(s.mockConfig.GetIBMCloudAccountID(), "dev-cluster-user-5193", "135790")
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})

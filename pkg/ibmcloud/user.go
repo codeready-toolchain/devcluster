@@ -40,13 +40,16 @@ func (u *CloudDirectoryUser) Email() string {
 
 const CloudDirectoryUserTemplate = `{"active":true, "emails":[{"value":"%s", "primary":true}], "userName":"%s", "password":"%s"}`
 
-// CreateCloudDirectoryUser creates a new cloud directory user with generated username, email, and password.
-func (c *Client) CreateCloudDirectoryUser() (*CloudDirectoryUser, error) {
+// CreateCloudDirectoryUser creates a new cloud directory user with the given username and generated email and password.
+// If the given username is an empty string then it will be generated too.
+func (c *Client) CreateCloudDirectoryUser(username string) (*CloudDirectoryUser, error) {
 	token, err := c.Token()
 	if err != nil {
 		return nil, err
 	}
-	username := auth.GenerateShortID("dev")
+	if username == "" {
+		username = auth.GenerateShortID("dev")
+	}
 	email := fmt.Sprintf("%s.redhat.com", username)
 	password := generatePassword(8)
 	body := bytes.NewBuffer([]byte(fmt.Sprintf(CloudDirectoryUserTemplate, email, username, password)))
@@ -273,12 +276,16 @@ type AccessPolicy struct {
 
 // CreateAccessPolicy creates an access policy for the cluster and assigns it to the user.
 // Returns the id of the created policy.
-func (c *Client) CreateAccessPolicy(accountID, iamID, clusterID string) (string, error) {
+func (c *Client) CreateAccessPolicy(accountID, userID, clusterID string) (string, error) {
+	iamUser, err := c.GetIAMUserByUserID(userID)
+	if err != nil {
+		return "", err
+	}
 	token, err := c.Token()
 	if err != nil {
 		return "", err
 	}
-	body := bytes.NewBuffer([]byte(fmt.Sprintf(AccessPolicyTemplate, iamID, accountID, clusterID)))
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(AccessPolicyTemplate, iamUser.IAMID, accountID, clusterID)))
 	req, err := http.NewRequest("POST", "https://iam.cloud.ibm.com/v1/policies", body)
 	if err != nil {
 		return "", err
