@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/codeready-toolchain/devcluster/pkg/auth"
@@ -136,8 +137,7 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 
 // DeleteCluster deletes the cluster with the given ID
 func (s *ClusterService) DeleteCluster(id string) error {
-	err := s.IbmCloudClient.DeleteCluster(id)
-	if err != nil {
+	if err := s.IbmCloudClient.DeleteCluster(id); err != nil {
 		return err
 	}
 	c, err := getCluster(id)
@@ -146,6 +146,9 @@ func (s *ClusterService) DeleteCluster(id string) error {
 	}
 	c.Error = ""
 	c.Status = StatusDeleted
+	if err := s.recycleUser(id); err != nil {
+		return err
+	}
 	return replaceCluster(*c)
 }
 
@@ -249,6 +252,10 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 	for i := 0; i < 6; i++ {
 		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone, r.NoSubnet)
 		if err == nil {
+			if err := s.assignUser(id); err != nil {
+				log.Error(nil, err, "unable to assign a user to the cluster")
+				return err
+			}
 			break
 		}
 		log.Error(nil, err, "unable to create cluster")
@@ -263,6 +270,75 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 	}
 	log.Infof(nil, "starting provisioning cluster %s", name)
 	return s.waitForClusterToBeReady(r, id, name)
+}
+
+// Controls access to the user pool for assigning clusters
+var clusterAssigneeMux sync.Mutex
+
+// assignUser picks a free user from the user pool and grands access to the cluster to that user
+// by creating an Access Policy.
+func (s *ClusterService) assignUser(clusterID string) error {
+	user, err := s.obtainFreeUser(clusterID)
+	if err != nil {
+		return err
+	}
+	iamUser, err := s.IbmCloudClient.GetIAMUserByUserID(user.ID)
+	if err != nil {
+		rollBackClusterAssigment(*user)
+		log.Error(nil, err, fmt.Sprintf("unable to obtain a iam user by user ID: %s", user.ID))
+		return err
+	}
+	policyID, err := s.IbmCloudClient.CreateAccessPolicy(s.Config.GetIBMCloudAccountID(), iamUser.IAMID, clusterID)
+	if err != nil {
+		rollBackClusterAssigment(*user)
+		log.Error(nil, err, fmt.Sprintf("unable to create access policy for user ID: %s", user.ID))
+		return err
+	}
+	user.PolicyID = policyID
+	return replaceUser(*user)
+}
+
+// rollBackClusterAssigment rolls back cluster assigment for the user
+func rollBackClusterAssigment(user User) {
+	user.ClusterID = ""
+	if e := replaceUser(user); e != nil {
+		log.Error(nil, e, fmt.Sprintf("unable to roll back cluster assigment for the user with id: %s", user.ID))
+	}
+}
+
+// obtainFreeUser obtains a free user from the user pool and sets the cluster ID to that user so it can not be assigned to another cluster
+func (s *ClusterService) obtainFreeUser(clusterID string) (*User, error) {
+	clusterAssigneeMux.Lock()
+	defer clusterAssigneeMux.Unlock()
+	user, err := getUserWithoutCluster()
+	if err != nil {
+		return nil, err
+	}
+	user.ClusterID = clusterID
+
+	return user, replaceUser(*user)
+}
+
+// recycleUser change the password of the user assigned to the cluster and returns that user to the user pool
+// so it can be assigned to another cluster.
+func (s *ClusterService) recycleUser(clusterID string) error {
+	user, err := getUserByClusterID(clusterID)
+	if err != nil {
+		return err
+	}
+	if err := s.IbmCloudClient.DeleteAccessPolicy(user.PolicyID); err != nil {
+		return err
+	}
+	cloudDirUser, err := s.IbmCloudClient.UpdateCloudDirectoryUserPassword(user.CloudDirectID)
+	if err != nil {
+		log.Error(nil, err, fmt.Sprintf("unable to update cloud directory user password for user: %s", user.ID))
+		return err
+	}
+	user.PolicyID = ""
+	user.ClusterID = ""
+	user.Password = cloudDirUser.Password
+
+	return replaceUser(*user)
 }
 
 // waitForClusterToBeReady for the cluster to be ready

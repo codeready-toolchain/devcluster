@@ -166,7 +166,8 @@ func getClusters(requestID string) ([]Cluster, error) {
 	return clusters, err
 }
 
-// getFreeUser returns the first found user with no cluster_id set
+// getUserWithoutCluster returns the first found user with no cluster_id set
+// returns an error if no user found
 func getUserWithoutCluster() (*User, error) {
 	return getUserByClusterID("")
 }
