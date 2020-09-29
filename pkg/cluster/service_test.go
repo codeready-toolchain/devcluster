@@ -39,19 +39,31 @@ func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int
 	assert.Equal(s.T(), n, req.Requested)
 	assert.Equal(s.T(), "provisioning", req.Status)
 	assert.Equal(s.T(), "lon06", req.Zone)
+
 	return req
 }
 
-func (s *TestIntegrationSuite) TestRequestService() {
-	s.Run("request is provisioning", func() {
-		mockClient := ibmcloudmock.NewMockIBMCloudClient()
-		service := &cluster.ClusterService{
-			IbmCloudClient: mockClient,
-			Config: &MockConfig{
-				config: s.Config,
-			},
-		}
+func (s *TestIntegrationSuite) newUsers(service *cluster.ClusterService, n int) []cluster.User {
+	users, err := service.CreateUsers(n, 0)
+	require.NoError(s.T(), err)
+	return users
+}
 
+func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient) {
+	mockClient := ibmcloudmock.NewMockIBMCloudClient()
+	service := &cluster.ClusterService{
+		IbmCloudClient: mockClient,
+		Config: &MockConfig{
+			config: s.Config,
+		},
+	}
+	return service, mockClient
+}
+
+func (s *TestIntegrationSuite) TestRequestClusters() {
+	s.Run("request is provisioning", func() {
+		service, mockClient := s.prepareService()
+		s.newUsers(service, 50)
 		request1 := s.newRequest(service, 10, 100)
 		request2 := s.newRequest(service, 10, 100)
 
@@ -115,29 +127,34 @@ func (s *TestIntegrationSuite) TestRequestService() {
 			})
 		})
 	})
+}
 
-	s.Run("get zones", func() {
-		_, serv, _, _ := s.provisionClusters(1, 100)
-
-		zones, err := serv.GetZones()
+func (s *TestIntegrationSuite) TestGetZones() {
+	service, _ := s.prepareService()
+	s.Run("get zones OK", func() {
+		zones, err := service.GetZones()
 		require.NoError(s.T(), err)
-		expected, err := serv.IbmCloudClient.GetZones()
+		expected, err := service.IbmCloudClient.GetZones()
 		require.NoError(s.T(), err)
 		assert.NotEmpty(s.T(), zones)
 		assert.Equal(s.T(), expected, zones)
 	})
+}
 
-	s.Run("delete cluster", func() {
+func (s *TestIntegrationSuite) TestDeleteCluster() {
+	service, cl := s.prepareService()
+	s.newUsers(service, 10)
+	s.Run("delete cluster OK", func() {
 		// Provision some clusters
-		_, serv, req, reqWithClusters := s.provisionClusters(3, 100)
+		req, reqWithClusters := s.provisionClusters(service, cl, 3, 100)
 
 		// Now delete one
 		toDelete := reqWithClusters.Clusters[1]
-		err := serv.DeleteCluster(toDelete.ID)
+		err := service.DeleteCluster(toDelete.ID)
 		require.NoError(s.T(), err)
 
 		// Check the deleted cluster
-		result, err := serv.GetRequestWithClusters(req.ID)
+		result, err := service.GetRequestWithClusters(req.ID)
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), cluster.Cluster{
 			ID:        toDelete.ID,
@@ -149,29 +166,33 @@ func (s *TestIntegrationSuite) TestRequestService() {
 		}, result.Clusters[1])
 
 		// Check the cluster was deleted in ibm cloud
-		_, err = serv.IbmCloudClient.GetCluster(toDelete.ID)
+		_, err = service.IbmCloudClient.GetCluster(toDelete.ID)
 		require.Error(s.T(), err)
 		assert.True(s.T(), devclustererr.IsNotFound(err))
 	})
+}
 
-	s.Run("delete expired clusters", func() {
+func (s *TestIntegrationSuite) TestExpiredClusters() {
+	service, cl := s.prepareService()
+	s.newUsers(service, 10)
+	s.Run("delete expired clusters OK", func() {
 		// 1. Provision two requests. One is expired and the other one is not.
-		_, serv, reqExpired, _ := s.provisionClusters(3, 0)
-		_, _, req, _ := s.provisionClusters(3, 100)
+		reqExpired, _ := s.provisionClusters(service, cl, 3, 0)
+		req, _ := s.provisionClusters(service, cl, 3, 100)
 
 		// 2. Start deleting clusters.
-		serv.StartDeletingExpiredClusters(1)
+		service.StartDeletingExpiredClusters(1)
 
 		// 3. Check the expired one is deleted and the other one is not.
-		deletedReq, err := waitForRequest(serv, reqExpired, requestExpired, clustersDeleted)
+		deletedReq, err := waitForRequest(service, reqExpired, requestExpired, clustersDeleted)
 		require.NoError(s.T(), err)
 		// Check the cluster were created in ibm cloud
 		for _, c := range deletedReq.Clusters {
-			_, err := serv.IbmCloudClient.GetCluster(c.ID)
+			_, err := service.IbmCloudClient.GetCluster(c.ID)
 			require.Error(s.T(), err)
 			assert.True(s.T(), devclustererr.IsNotFound(err))
 		}
-		_, err = waitForClustersToGetProvisioned(serv, req) // the other one is still ready
+		_, err = waitForClustersToGetProvisioned(service, req) // the other one is still ready
 		require.NoError(s.T(), err)
 	})
 }
@@ -209,23 +230,15 @@ func (s *TestIntegrationSuite) TestUsers() {
 	})
 }
 
-func (s *TestIntegrationSuite) provisionClusters(n, deleteIn int) (*ibmcloudmock.MockIBMCloudClient, *cluster.ClusterService, cluster.Request, cluster.RequestWithClusters) {
-	mockClient := ibmcloudmock.NewMockIBMCloudClient()
-	service := &cluster.ClusterService{
-		IbmCloudClient: mockClient,
-		Config: &MockConfig{
-			config: s.Config,
-		},
-	}
-
+func (s *TestIntegrationSuite) provisionClusters(service *cluster.ClusterService, client *ibmcloudmock.MockIBMCloudClient, n, deleteIn int) (cluster.Request, cluster.RequestWithClusters) {
 	req := s.newRequest(service, n, deleteIn)
 	_, err := waitForClustersToStartProvisioning(service, req)
 	require.NoError(s.T(), err)
-	s.markClustersAsProvisioned(service, mockClient, req)
+	s.markClustersAsProvisioned(service, client, req)
 	r, err := waitForClustersToGetProvisioned(service, req)
 	require.NoError(s.T(), err)
 
-	return mockClient, service, req, r
+	return req, r
 }
 
 func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.ClusterService, client *ibmcloudmock.MockIBMCloudClient, request cluster.Request) {

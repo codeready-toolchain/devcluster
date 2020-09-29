@@ -142,7 +142,11 @@ func (c *MockIBMCloudClient) UpdateCloudDirectoryUserPassword(id string) (*ibmcl
 func (c *MockIBMCloudClient) GetIAMUserByUserID(userID string) (*ibmcloud.IAMUser, error) {
 	defer c.cldUserMux.RUnlock()
 	c.cldUserMux.RLock()
-	return c.aimUserByID[userID], nil
+	found := c.aimUserByID[userID]
+	if found == nil {
+		return nil, errors.New("user not found")
+	}
+	return found, nil
 }
 
 func (c *MockIBMCloudClient) CreateAccessPolicy(_, _, _ string) (string, error) {

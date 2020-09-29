@@ -173,6 +173,7 @@ func getUserWithoutCluster() (*User, error) {
 }
 
 // getUserByClusterID returns the first found user with the given cluster_id
+// returns an error if no user found
 func getUserByClusterID(clusterID string) (*User, error) {
 	res := mongodb.Users().FindOne(
 		context.Background(),
@@ -184,9 +185,6 @@ func getUserByClusterID(clusterID string) (*User, error) {
 	var m bson.M
 	err := res.Decode(&m)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
 		return nil, errors.Wrap(err, fmt.Sprintf("no User with cluster_id %s found", clusterID))
 	}
 	u := convertBSONToUser(m)

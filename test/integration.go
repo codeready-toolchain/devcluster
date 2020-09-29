@@ -60,6 +60,10 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	s.mongoDisconnect()
 }
 
+func (s *IntegrationTestSuite) TearDownTest() {
+	s.cleanupDatabase()
+}
+
 func (s *IntegrationTestSuite) cleanupDatabase() {
 	names, err := mongodb.Devcluster().ListCollectionNames(context.Background(), bson.D{})
 	if err != nil {
