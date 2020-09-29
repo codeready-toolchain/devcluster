@@ -163,3 +163,9 @@ func (c *MockIBMCloudClient) DeleteAccessPolicy(id string) error {
 	c.policyByID[id] = nil
 	return nil
 }
+
+func (c *MockIBMCloudClient) AccessPolicyExists(id string) bool {
+	defer c.policyMux.RUnlock()
+	c.policyMux.RLock()
+	return c.policyByID[id] != nil
+}

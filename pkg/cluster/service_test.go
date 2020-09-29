@@ -146,11 +146,37 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 
 func (s *TestIntegrationSuite) TestExpiredClusters() {
 	service, cl := s.prepareService()
-	s.newUsers(service, 6)
+	users := s.newUsers(service, 6)
 	s.Run("delete expired clusters OK", func() {
 		// 1. Provision two requests. One is expired and the other one is not.
-		reqExpired, _ := s.provisionClusters(service, cl, 3, 0)
-		req, _ := s.provisionClusters(service, cl, 3, 100)
+		reqExpired, reqExpiredWithClusters := s.provisionClusters(service, cl, 3, 0)
+		req, reqWithClusters := s.provisionClusters(service, cl, 3, 100)
+
+		// 1.1. Verify that all clusters have assigned users
+		assertClusterHasAssignedUser := func(c cluster.Cluster) *cluster.User {
+			u, err := cluster.GetUserByClusterID(c.ID)
+			require.NoError(s.T(), err)
+			assert.Equal(s.T(), c.ID, u.ClusterID)
+			assert.NotEmpty(s.T(), u.Password)
+			assert.NotEmpty(s.T(), u.PolicyID)
+			assert.True(s.T(), cl.AccessPolicyExists(u.PolicyID))
+			return u
+		}
+		foundUsers := make(map[string]*string, 0)
+		var policiesToBeDeleted = make([]string, 0, 3)
+		for _, c := range reqExpiredWithClusters.Clusters {
+			u := assertClusterHasAssignedUser(c)
+			foundUsers[u.ID] = &u.ID
+			policiesToBeDeleted = append(policiesToBeDeleted, u.PolicyID)
+		}
+		for _, c := range reqWithClusters.Clusters {
+			u := assertClusterHasAssignedUser(c)
+			foundUsers[u.ID] = &u.ID
+		}
+		assert.Len(s.T(), foundUsers, len(users))
+		for _, u := range users {
+			assert.NotNil(s.T(), foundUsers[u.ID])
+		}
 
 		// 2. Start deleting clusters.
 		service.StartDeletingExpiredClusters(1)
@@ -158,14 +184,36 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 		// 3. Check the expired one is deleted and the other one is not.
 		deletedReq, err := waitForRequest(service, reqExpired, requestExpired, clustersDeleted, usersRecycled)
 		require.NoError(s.T(), err)
-		// Check the cluster were created in ibm cloud
+		// Check the cluster were deleted from ibm cloud
 		for _, c := range deletedReq.Clusters {
 			_, err := service.IbmCloudClient.GetCluster(c.ID)
 			require.Error(s.T(), err)
 			assert.True(s.T(), devclustererr.IsNotFound(err))
 		}
-		_, err = waitForClustersToGetProvisioned(service, req) // the other one is still ready
+		// And the users have been recycled
+		for _, c := range reqExpiredWithClusters.Clusters {
+			_, err := cluster.GetUserByClusterID(c.ID)
+			require.EqualError(s.T(), err, fmt.Sprintf("no User with cluster_id %s found: mongo: no documents in result", c.ID))
+		}
+		// All the polices have been deleted
+		for _, policy := range policiesToBeDeleted {
+			assert.False(s.T(), cl.AccessPolicyExists(policy))
+		}
+
+		// the other one is still ready and the clusters still exist in IC
+		_, err = waitForClustersToGetProvisioned(service, req)
 		require.NoError(s.T(), err)
+		for _, c := range reqWithClusters.Clusters {
+			_, err := service.IbmCloudClient.GetCluster(c.ID)
+			require.NoError(s.T(), err)
+		}
+		// the clusters are still assigned
+		foundUsers = make(map[string]*string, 0)
+		for _, c := range reqWithClusters.Clusters {
+			u := assertClusterHasAssignedUser(c)
+			foundUsers[u.ID] = &u.ID
+		}
+		assert.Len(s.T(), foundUsers, 3)
 	})
 }
 
