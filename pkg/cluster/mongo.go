@@ -169,12 +169,12 @@ func getClusters(requestID string) ([]Cluster, error) {
 // getUserWithoutCluster returns the first found user with no cluster_id set
 // returns an error if no user found
 func getUserWithoutCluster() (*User, error) {
-	return getUserByClusterID("")
+	return GetUserByClusterID("")
 }
 
 // getUserByClusterID returns the first found user with the given cluster_id
 // returns an error if no user found
-func getUserByClusterID(clusterID string) (*User, error) {
+func GetUserByClusterID(clusterID string) (*User, error) {
 	res := mongodb.Users().FindOne(
 		context.Background(),
 		bson.D{{"cluster_id", clusterID}},

@@ -32,34 +32,6 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 	suite.Run(t, &TestIntegrationSuite{test.IntegrationTestSuite{}})
 }
 
-func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int, deleteIn int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn, false)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
-	assert.Equal(s.T(), n, req.Requested)
-	assert.Equal(s.T(), "provisioning", req.Status)
-	assert.Equal(s.T(), "lon06", req.Zone)
-
-	return req
-}
-
-func (s *TestIntegrationSuite) newUsers(service *cluster.ClusterService, n int) []cluster.User {
-	users, err := service.CreateUsers(n, 0)
-	require.NoError(s.T(), err)
-	return users
-}
-
-func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient) {
-	mockClient := ibmcloudmock.NewMockIBMCloudClient()
-	service := &cluster.ClusterService{
-		IbmCloudClient: mockClient,
-		Config: &MockConfig{
-			config: s.Config,
-		},
-	}
-	return service, mockClient
-}
-
 func (s *TestIntegrationSuite) TestRequestClusters() {
 	s.Run("request is provisioning", func() {
 		service, mockClient := s.prepareService()
@@ -174,7 +146,7 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 
 func (s *TestIntegrationSuite) TestExpiredClusters() {
 	service, cl := s.prepareService()
-	s.newUsers(service, 10)
+	s.newUsers(service, 6)
 	s.Run("delete expired clusters OK", func() {
 		// 1. Provision two requests. One is expired and the other one is not.
 		reqExpired, _ := s.provisionClusters(service, cl, 3, 0)
@@ -184,7 +156,7 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 		service.StartDeletingExpiredClusters(1)
 
 		// 3. Check the expired one is deleted and the other one is not.
-		deletedReq, err := waitForRequest(service, reqExpired, requestExpired, clustersDeleted)
+		deletedReq, err := waitForRequest(service, reqExpired, requestExpired, clustersDeleted, usersRecycled)
 		require.NoError(s.T(), err)
 		// Check the cluster were created in ibm cloud
 		for _, c := range deletedReq.Clusters {
@@ -198,7 +170,7 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 }
 
 func (s *TestIntegrationSuite) TestUsers() {
-	s.Run("request new users", func() {
+	s.Run("request new users OK", func() {
 		mockClient := ibmcloudmock.NewMockIBMCloudClient()
 		service := &cluster.ClusterService{
 			IbmCloudClient: mockClient,
@@ -228,6 +200,34 @@ func (s *TestIntegrationSuite) TestUsers() {
 			assertUsers(service.Users())
 		})
 	})
+}
+
+func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int, deleteIn int) cluster.Request {
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn, false)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
+	assert.Equal(s.T(), n, req.Requested)
+	assert.Equal(s.T(), "provisioning", req.Status)
+	assert.Equal(s.T(), "lon06", req.Zone)
+
+	return req
+}
+
+func (s *TestIntegrationSuite) newUsers(service *cluster.ClusterService, n int) []cluster.User {
+	users, err := service.CreateUsers(n, 0)
+	require.NoError(s.T(), err)
+	return users
+}
+
+func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient) {
+	mockClient := ibmcloudmock.NewMockIBMCloudClient()
+	service := &cluster.ClusterService{
+		IbmCloudClient: mockClient,
+		Config: &MockConfig{
+			config: s.Config,
+		},
+	}
+	return service, mockClient
 }
 
 func (s *TestIntegrationSuite) provisionClusters(service *cluster.ClusterService, client *ibmcloudmock.MockIBMCloudClient, n, deleteIn int) (cluster.Request, cluster.RequestWithClusters) {
@@ -312,14 +312,47 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 	return true, nil
 }
 
+func usersAssigned(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		if c.Status != "deleted" {
+			user, err := cluster.GetUserByClusterID(c.ID)
+			if err != nil {
+				return false, err
+			}
+			if user.Password == "" ||
+				user.PolicyID == "" ||
+				user.CloudDirectID == "" ||
+				user.Email == "" {
+				return false, errors.New(fmt.Sprintf("unexpected cluster user assigned to cluster: %v", user))
+			}
+		}
+	}
+	return true, nil
+}
+
+func usersRecycled(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		if c.Status == "deleted" {
+			user, err := cluster.GetUserByClusterID(c.ID)
+			if err == nil {
+				return false, errors.New(fmt.Sprintf("cluster has an assigned user: %v", user))
+			}
+			if err.Error() != fmt.Sprintf("no User with cluster_id %s found: mongo: no documents in result", c.ID) {
+				return false, errors.New(fmt.Sprintf("unexpected error: %s", err.Error()))
+			}
+		}
+	}
+	return true, nil
+}
+
 func waitForClustersToStartProvisioning(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
 	fmt.Println("Wait for clusters to start provisioning")
-	return waitForRequest(service, request, clustersDeploying)
+	return waitForRequest(service, request, clustersDeploying, usersAssigned)
 }
 
 func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
 	fmt.Println("Wait for clusters to get provisioned")
-	return waitForRequest(service, request, requestReady, clustersReady)
+	return waitForRequest(service, request, requestReady, clustersReady, usersAssigned)
 }
 
 func waitForRequest(service *cluster.ClusterService, request cluster.Request, criteria ...RequestCriterion) (cluster.RequestWithClusters, error) {

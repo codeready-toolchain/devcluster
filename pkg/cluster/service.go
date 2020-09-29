@@ -322,7 +322,7 @@ func (s *ClusterService) obtainFreeUser(clusterID string) (*User, error) {
 // recycleUser change the password of the user assigned to the cluster and returns that user to the user pool
 // so it can be assigned to another cluster.
 func (s *ClusterService) recycleUser(clusterID string) error {
-	user, err := getUserByClusterID(clusterID)
+	user, err := GetUserByClusterID(clusterID)
 	if err != nil {
 		return err
 	}
