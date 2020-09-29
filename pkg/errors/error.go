@@ -43,7 +43,7 @@ func NewInternalServerError(message, details string) *Error {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("%d %s %s: %s", e.Code, e.Status, e.Message, e.Details)
+	return fmt.Sprintf("%d %s: %s: %s", e.Code, e.Status, e.Message, e.Details)
 }
 
 func IsNotFound(err error) bool {

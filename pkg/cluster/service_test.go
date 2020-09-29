@@ -193,7 +193,7 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 		// And the users have been recycled
 		for _, c := range reqExpiredWithClusters.Clusters {
 			_, err := cluster.GetUserByClusterID(c.ID)
-			require.EqualError(s.T(), err, fmt.Sprintf("no User with cluster_id %s found: mongo: no documents in result", c.ID))
+			require.EqualError(s.T(), err, fmt.Sprintf("404 Not Found: no User with cluster_id %s found: mongo: no documents in result", c.ID))
 		}
 		// All the polices have been deleted
 		for _, policy := range policiesToBeDeleted {
@@ -370,8 +370,9 @@ func usersAssigned(req *cluster.RequestWithClusters) (bool, error) {
 			if user.Password == "" ||
 				user.PolicyID == "" ||
 				user.CloudDirectID == "" ||
-				user.Email == "" {
-				return false, errors.New(fmt.Sprintf("unexpected cluster user assigned to cluster: %v", user))
+				user.Email == "" ||
+				*user != c.User {
+				return false, errors.New(fmt.Sprintf("unexpected cluster user assigned to cluster. Expected: %v; Actual: %v", user, c.User))
 			}
 		}
 	}
@@ -385,8 +386,12 @@ func usersRecycled(req *cluster.RequestWithClusters) (bool, error) {
 			if err == nil {
 				return false, errors.New(fmt.Sprintf("cluster has an assigned user: %v", user))
 			}
-			if err.Error() != fmt.Sprintf("no User with cluster_id %s found: mongo: no documents in result", c.ID) {
+			if err.Error() != fmt.Sprintf("404 Not Found: no User with cluster_id %s found: mongo: no documents in result", c.ID) {
 				return false, errors.New(fmt.Sprintf("unexpected error: %s", err.Error()))
+			}
+			empty := cluster.User{}
+			if c.User != empty {
+				return false, errors.New(fmt.Sprintf("cluster has an assigned user: %v", c.User))
 			}
 		}
 	}

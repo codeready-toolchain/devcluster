@@ -53,6 +53,7 @@ type Cluster struct {
 	URL       string
 	Status    string
 	Error     string
+	User      User
 }
 
 type User struct {
@@ -97,6 +98,16 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 		return nil, nil
 	}
 	clusters, err := getClusters(requestID)
+	for i, _ := range clusters {
+		user, err := GetUserByClusterID(clusters[i].ID)
+		if err != nil {
+			if devclustererr.IsNotFound(err) {
+				continue // Ignore not found users
+			}
+			return nil, err
+		}
+		clusters[i].User = *user
+	}
 	if err != nil {
 		return nil, err
 	}

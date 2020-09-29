@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	devclustererrors "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
-
 	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 
 	"github.com/pkg/errors"
@@ -185,7 +185,10 @@ func GetUserByClusterID(clusterID string) (*User, error) {
 	var m bson.M
 	err := res.Decode(&m)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("no User with cluster_id %s found", clusterID))
+		if err == mongo.ErrNoDocuments {
+			return nil, devclustererrors.NewNotFoundError(fmt.Sprintf("no User with cluster_id %s found", clusterID), err.Error())
+		}
+		return nil, errors.New(fmt.Sprintf("unable to find User with cluster_id: %s", clusterID))
 	}
 	u := convertBSONToUser(m)
 	return &u, nil
