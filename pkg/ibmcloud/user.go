@@ -50,7 +50,7 @@ func (c *Client) CreateCloudDirectoryUser(username string) (*CloudDirectoryUser,
 	if username == "" {
 		username = auth.GenerateShortID("dev")
 	}
-	email := fmt.Sprintf("%s.redhat.com", username)
+	email := fmt.Sprintf("%s@redhat.com", username)
 	password := generatePassword(8)
 	body := bytes.NewBuffer([]byte(fmt.Sprintf(CloudDirectoryUserTemplate, email, username, password)))
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s.appid.cloud.ibm.com/management/v4/%s/cloud_directory/sign_up?shouldCreateProfile=true&language=en", apiRegion, c.config.GetIBMCloudTenantID()), body)

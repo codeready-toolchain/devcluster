@@ -92,7 +92,25 @@
           <div id="cluster-request-details-table">
           </div>
         </div>
+        <div id="request-users">
+          <hr>
+          <div class="devcluster-state" id="state-request-users">
+            Number of Users: <input type="number" id="number-of-users" name="number-of-users" min="1" max="500">
+            Start with: <input type="number" id="start-index" name="start-index" min="0" max="1000000" value="1000">
+            <button class="submitbutton" onclick="requestUsers()">Create Users</button>
+          </div>
+          <div class="devcluster-state" id="state-creating-users">
+            <h1>Creating users...</h1>
+          </div>
+          <div class="devcluster-state" id="state-users-created">
+            <h1>Users created</h1>
+          </div>
+          <div class="devcluster-state" id="state-get-users">
+            <button class="submitbutton" onclick="exportUsers()">Get Users</button>
+          </div>
+        </div>
       </div>
+
     </section>
   </main>
 </div>

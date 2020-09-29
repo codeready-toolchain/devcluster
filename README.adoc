@@ -108,7 +108,7 @@ Then:
 
 Then run:
 ```bash
-make deploy-dev
+make deploy
 ```
 
 === Deploying on minishift

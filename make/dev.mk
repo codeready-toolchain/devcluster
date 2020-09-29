@@ -40,9 +40,9 @@ reset-namespace: login-as-admin clean-namespace create-namespace
 ## Deploy DevCluster service on minishift
 deploy-on-minishift: login-as-admin create-namespace build docker-image-dev apply-resources print-route
 
-.PHONY: deploy-dev
-## Deploy DevCluster on dev environment
-deploy-dev: create-namespace build docker-image-dev docker-push-dev apply-resources print-route
+.PHONY: deploy
+## Deploy DevCluster
+deploy: create-namespace build docker-image-dev docker-push-dev apply-resources print-route
 
 .PHONY: apply-resources
 ## Apply DevCluster resources
@@ -57,7 +57,6 @@ apply-resources:
         | oc create -f -
 	$(Q)oc process -f ./deploy/devcluster.yaml \
         -p IMAGE=${IMAGE_DEV} \
-        -p ENVIRONMENT=dev \
         -p NAMESPACE=${NAMESPACE} \
         | oc apply -f -
 

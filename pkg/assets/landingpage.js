@@ -41,6 +41,10 @@ function hideAll() {
   document.getElementById('state-error').style.display = 'none';
   document.getElementById('cluster-requests').style.display = 'none';
   document.getElementById('cluster-request-details').style.display = 'none';
+
+  document.getElementById('state-creating-users').style.display = 'none';
+  document.getElementById('state-users-created').style.display = 'none';
+  document.getElementById('request-users').style.display = 'none';
 }
 
 function hideAllButClusterDetails() {
@@ -57,8 +61,15 @@ function show(elementId) {
   document.getElementById(elementId).style.display = 'block';
 }
 
+function hide(elementId) {
+  document.getElementById(elementId).style.display = 'none';
+}
+
 function showRequestForm() {
   show('state-request-clusters');
+  show('request-users');
+  show('state-request-users');
+  show('state-get-users');
 }
 
 function showError(errorText) {
@@ -301,7 +312,35 @@ function requestClusters() {
   });
   intervalRef = setInterval(updateClusterRequests, 1000);
 }
-      
+
+// create Users
+function requestUsers() {
+  document.getElementById('state-request-users').disabled = true;
+  show('state-creating-users');
+  var n = document.getElementById("number-of-users").value;
+  var startIndex = document.getElementById("start-index").value;
+  getJSON('POST', '/api/v1/users', idToken, "number-of-users=" + n + "&start-index=" + startIndex, function(err, data) {
+    hide('state-creating-users');
+    document.getElementById('state-request-users').disabled = false;
+    if (err != null) {
+      showError(JSON.stringify(data, null, 2));
+    } else {
+      show('state-users-created');
+    }
+  });
+}
+
+// export Users
+function exportUsers() {
+  getJSON('GET', '/api/v1/users', idToken, "", function(err, data) {
+    if (err != null) {
+      showError(JSON.stringify(data, null, 2));
+    } else {
+      exportCSVFile(headers, data, "users");
+    }
+  });
+}
+
 // main operation, load config, load client, run client
 getJSON('GET', configURL, null, null, function(err, data) {
   if (err !== null) {
@@ -341,4 +380,63 @@ getJSON('GET', configURL, null, null, function(err, data) {
     });
   }
 });
-  
+
+
+
+function convertToCSV(objArray) {
+  var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+  var str = '';
+
+  for (var i = 0; i < array.length; i++) {
+    var line = '';
+    for (var index in array[i]) {
+      if (line != '') line += ','
+
+      line += array[i][index];
+    }
+
+    str += line + '\r\n';
+  }
+
+  return str;
+}
+
+function exportCSVFile(headers, items, fileTitle) {
+  if (headers) {
+    items.unshift(headers);
+  }
+
+  // Convert Object to JSON
+  var jsonObject = JSON.stringify(items);
+
+  var csv = this.convertToCSV(jsonObject);
+
+  var exportedFilenmae = fileTitle + '.csv' || 'export.csv';
+
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  if (navigator.msSaveBlob) { // IE 10+
+    navigator.msSaveBlob(blob, exportedFilenmae);
+  } else {
+    var link = document.createElement("a");
+    if (link.download !== undefined) { // feature detection
+      // Browsers that support HTML5 download attribute
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", exportedFilenmae);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+}
+
+var headers = {
+  ID: 'Username',
+  CloudDirectoryID: "CloudDirectoryID",
+  Email: "Email",
+  Password: "Password",
+  ClusterID: "Cluster",
+  PolicyID: "Policy"
+};
+
