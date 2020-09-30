@@ -35,7 +35,7 @@ type ICClient interface {
 	CreateCloudDirectoryUser(username string) (*CloudDirectoryUser, error)
 	UpdateCloudDirectoryUserPassword(id string) (*CloudDirectoryUser, error)
 	GetIAMUserByUserID(userID string) (*IAMUser, error)
-	CreateAccessPolicy(accountID, iamID, clusterID string) (string, error)
+	CreateAccessPolicy(accountID, userID, clusterID string) (string, error)
 	DeleteAccessPolicy(id string) error
 }
 

@@ -293,13 +293,7 @@ func (s *ClusterService) assignUser(clusterID string) error {
 	if err != nil {
 		return err
 	}
-	iamUser, err := s.IbmCloudClient.GetIAMUserByUserID(user.ID)
-	if err != nil {
-		rollBackClusterAssigment(*user)
-		log.Error(nil, err, fmt.Sprintf("unable to obtain a iam user by user ID: %s", user.ID))
-		return err
-	}
-	policyID, err := s.IbmCloudClient.CreateAccessPolicy(s.Config.GetIBMCloudAccountID(), iamUser.IAMID, clusterID)
+	policyID, err := s.IbmCloudClient.CreateAccessPolicy(s.Config.GetIBMCloudAccountID(), user.ID, clusterID)
 	if err != nil {
 		rollBackClusterAssigment(*user)
 		log.Error(nil, err, fmt.Sprintf("unable to create access policy for user ID: %s", user.ID))

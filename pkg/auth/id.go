@@ -15,7 +15,7 @@ func GenerateShortID(prefix string) string {
 	if prefix != "" {
 		prefix = prefix + "-"
 	}
-	return fmt.Sprintf("%s-%d", prefix, hash(uuid.NewV4().String()))
+	return fmt.Sprintf("%s%d", prefix, hash(uuid.NewV4().String()))
 }
 
 func hash(s string) uint32 {
