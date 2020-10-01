@@ -63,6 +63,7 @@ type User struct {
 	Password      string
 	ClusterID     string
 	PolicyID      string
+	Recycled      int64 // last recycle timestamp
 }
 
 var DefaultClusterService *ClusterService
@@ -342,6 +343,7 @@ func (s *ClusterService) recycleUser(clusterID string) error {
 	user.PolicyID = ""
 	user.ClusterID = ""
 	user.Password = cloudDirUser.Password
+	user.Recycled = time.Now().Unix()
 
 	return replaceUser(*user)
 }

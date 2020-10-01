@@ -166,18 +166,22 @@ func getClusters(requestID string) ([]Cluster, error) {
 	return clusters, err
 }
 
-// getUserWithoutCluster returns the first found user with no cluster_id set
+// getUserWithoutCluster returns the first found user with no cluster_id set and with the earliest "recycled" timestamp
 // returns an error if no user found
 func getUserWithoutCluster() (*User, error) {
 	return GetUserByClusterID("")
 }
 
-// getUserByClusterID returns the first found user with the given cluster_id
+// getUserByClusterID returns the first found user with the given cluster_id and with the earliest "recycled" timestamp
 // returns an error if no user found
 func GetUserByClusterID(clusterID string) (*User, error) {
+	findOptions := options.FindOne()
+	// Sort by `recycled` field ascending
+	findOptions.SetSort(bson.D{{"recycled", 1}})
 	res := mongodb.Users().FindOne(
 		context.Background(),
 		bson.D{{"cluster_id", clusterID}},
+		findOptions,
 	)
 	if res == nil {
 		return nil, errors.New(fmt.Sprintf("unable to find User with cluster_id: %s", clusterID))
@@ -290,6 +294,7 @@ func convertBSONToUser(m bson.M) User {
 		Password:      string(fmt.Sprintf("%v", m["password"])),
 		ClusterID:     string(fmt.Sprintf("%v", m["cluster_id"])),
 		PolicyID:      string(fmt.Sprintf("%v", m["policy_id"])),
+		Recycled:      int64(m["recycled"].(int64)),
 	}
 }
 
@@ -301,5 +306,6 @@ func convertUserToBSON(u User) bson.D {
 		{"password", u.Password},
 		{"cluster_id", u.ClusterID},
 		{"policy_id", u.PolicyID},
+		{"recycled", u.Recycled},
 	}
 }

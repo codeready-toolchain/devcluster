@@ -160,14 +160,17 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 			assert.NotEmpty(s.T(), u.Password)
 			assert.NotEmpty(s.T(), u.PolicyID)
 			assert.True(s.T(), cl.AccessPolicyExists(u.PolicyID))
+			assert.Empty(s.T(), c.User.Recycled) // The user has not been recycled yet
 			return u
 		}
 		foundUsers := make(map[string]*string, 0)
 		var policiesToBeDeleted = make([]string, 0, 3)
+		usersToBeRecycled := make([]*cluster.User, 0, 3)
 		for _, c := range reqExpiredWithClusters.Clusters {
 			u := assertClusterHasAssignedUser(c)
 			foundUsers[u.ID] = &u.ID
 			policiesToBeDeleted = append(policiesToBeDeleted, u.PolicyID)
+			usersToBeRecycled = append(usersToBeRecycled, u)
 		}
 		for _, c := range reqWithClusters.Clusters {
 			u := assertClusterHasAssignedUser(c)
@@ -179,6 +182,7 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 		}
 
 		// 2. Start deleting clusters.
+		beforeDeleting := time.Now().Unix()
 		service.StartDeletingExpiredClusters(1)
 
 		// 3. Check the expired one is deleted and the other one is not.
@@ -190,10 +194,20 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 			require.Error(s.T(), err)
 			assert.True(s.T(), devclustererr.IsNotFound(err))
 		}
-		// And the users have been recycled
+		// And the expired clusters do not have assigned users
 		for _, c := range reqExpiredWithClusters.Clusters {
 			_, err := cluster.GetUserByClusterID(c.ID)
 			require.EqualError(s.T(), err, fmt.Sprintf("404 Not Found: no User with cluster_id %s found: mongo: no documents in result", c.ID))
+		}
+		// And all the users from the expired clusters are recycled
+		currentUsers, err := service.Users()
+		require.NoError(s.T(), err)
+		for _, u := range usersToBeRecycled {
+			for _, cu := range currentUsers {
+				if cu.ID == u.ID {
+					assert.True(s.T(), cu.Recycled >= beforeDeleting && cu.Recycled <= time.Now().Unix()) // Recycle timestamp is set
+				}
+			}
 		}
 		// All the polices have been deleted
 		for _, policy := range policiesToBeDeleted {
@@ -214,6 +228,35 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 			foundUsers[u.ID] = &u.ID
 		}
 		assert.Len(s.T(), foundUsers, 3)
+
+		s.Run("re-use recycled users", func() {
+			// Add one new user with the recycle timestamp not set so it should be used first before the recycled ones
+			newUsers, err := service.CreateUsers(1, 1000)
+			require.NoError(s.T(), err)
+			usersToBeAssigned := append([]*cluster.User{&newUsers[0]}, usersToBeRecycled...)
+
+			// Provision new clusters which should use the new user and the recycled ones which were returned to the pull after the first request expired
+			_, reqWithClusters := s.provisionClusters(service, cl, 4, 100)
+
+			// Verify that all the clusters use the recycled users
+			for i, c := range reqWithClusters.Clusters {
+				assert.Equal(s.T(), usersToBeAssigned[i].ID, c.User.ID)
+				assert.Equal(s.T(), c.User.ClusterID, c.ID)
+				assert.Equal(s.T(), usersToBeAssigned[i].Email, c.User.Email)
+				assert.Equal(s.T(), usersToBeAssigned[i].CloudDirectID, c.User.CloudDirectID)
+				assert.NotEqual(s.T(), usersToBeAssigned[i].PolicyID, c.User.PolicyID) // different policy
+				assert.NotEmpty(s.T(), c.User.PolicyID)
+				if i == 0 {
+					// new user
+					assert.Empty(s.T(), c.User.Recycled)
+					assert.NotEmpty(s.T(), c.User.Password)
+				} else {
+					// recycled user
+					assert.True(s.T(), c.User.Recycled >= beforeDeleting && c.User.Recycled <= time.Now().Unix()) // Recycle timestamp is set
+					assert.NotEqual(s.T(), usersToBeAssigned[i].Password, c.User.Password)                        // different password
+				}
+			}
+		})
 	})
 }
 
@@ -237,6 +280,7 @@ func (s *TestIntegrationSuite) TestUsers() {
 				assert.NotEmpty(s.T(), users[i].CloudDirectID)
 				assert.Empty(s.T(), users[i].PolicyID)
 				assert.Empty(s.T(), users[i].ClusterID)
+				assert.Empty(s.T(), users[i].Recycled)
 			}
 		}
 
