@@ -233,29 +233,40 @@ func (s *TestIntegrationSuite) TestExpiredClusters() {
 			// Add one new user with the recycle timestamp not set so it should be used first before the recycled ones
 			newUsers, err := service.CreateUsers(1, 1000)
 			require.NoError(s.T(), err)
-			usersToBeAssigned := append([]*cluster.User{&newUsers[0]}, usersToBeRecycled...)
 
-			// Provision new clusters which should use the new user and the recycled ones which were returned to the pull after the first request expired
-			_, reqWithClusters := s.provisionClusters(service, cl, 4, 100)
-
-			// Verify that all the clusters use the recycled users
-			for i, c := range reqWithClusters.Clusters {
-				assert.Equal(s.T(), usersToBeAssigned[i].ID, c.User.ID)
+			// Provision new clusters which should use the new user and one of the recycled ones which were returned to the pull after the first request expired
+			_, reqWithClusters := s.provisionClusters(service, cl, 2, 100)
+			assertClusterUser := func(expectedUser cluster.User, c cluster.Cluster) {
+				assert.Equal(s.T(), expectedUser.ID, c.User.ID)
 				assert.Equal(s.T(), c.User.ClusterID, c.ID)
-				assert.Equal(s.T(), usersToBeAssigned[i].Email, c.User.Email)
-				assert.Equal(s.T(), usersToBeAssigned[i].CloudDirectID, c.User.CloudDirectID)
-				assert.NotEqual(s.T(), usersToBeAssigned[i].PolicyID, c.User.PolicyID) // different policy
+				assert.Equal(s.T(), expectedUser.Email, c.User.Email)
+				assert.Equal(s.T(), expectedUser.CloudDirectID, c.User.CloudDirectID)
+				assert.NotEqual(s.T(), expectedUser.PolicyID, c.User.PolicyID) // different policy
 				assert.NotEmpty(s.T(), c.User.PolicyID)
-				if i == 0 {
+			}
+			var newUserAssigned, recycledUserAssigned bool
+			for _, c := range reqWithClusters.Clusters {
+				assert.NotEqual(s.T(), cluster.User{}, c.User)
+				if c.User.ID == newUsers[0].ID {
 					// new user
+					assertClusterUser(newUsers[0], c)
 					assert.Empty(s.T(), c.User.Recycled)
 					assert.NotEmpty(s.T(), c.User.Password)
+					newUserAssigned = true
 				} else {
 					// recycled user
-					assert.True(s.T(), c.User.Recycled >= beforeDeleting && c.User.Recycled <= time.Now().Unix()) // Recycle timestamp is set
-					assert.NotEqual(s.T(), usersToBeAssigned[i].Password, c.User.Password)                        // different password
+					for _, u := range usersToBeRecycled {
+						if c.User.ID == u.ID {
+							assertClusterUser(*u, c)
+							assert.True(s.T(), c.User.Recycled >= beforeDeleting && c.User.Recycled <= time.Now().Unix()) // Recycle timestamp is set
+							assert.NotEqual(s.T(), u.Password, c.User.Password)                                           // different password
+							recycledUserAssigned = true
+						}
+					}
 				}
 			}
+			assert.True(s.T(), newUserAssigned)
+			assert.True(s.T(), recycledUserAssigned)
 		})
 	})
 }
