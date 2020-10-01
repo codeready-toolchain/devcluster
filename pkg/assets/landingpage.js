@@ -437,6 +437,7 @@ var headers = {
   Email: "Email",
   Password: "Password",
   ClusterID: "Cluster",
-  PolicyID: "Policy"
+  PolicyID: "Policy",
+  Recycled: "Last time recycled at",
 };
 
