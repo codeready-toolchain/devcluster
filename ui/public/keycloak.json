@@ -1,0 +1,8 @@
+{
+    "auth-server-url": "https://sso.prod-preview.openshift.io/auth",
+    "realm": "devcluster-public",
+    "ssl-required": "none",
+    "resource": "devcluster-public",
+    "clientId": "devcluster-public",
+    "public-client": true
+}
