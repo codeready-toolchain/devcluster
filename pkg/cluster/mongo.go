@@ -269,6 +269,7 @@ func convertBSONToCluster(m bson.M) Cluster {
 		ID:        string(fmt.Sprintf("%v", m["_id"])),
 		RequestID: string(fmt.Sprintf("%v", m["request_id"])),
 		URL:       string(fmt.Sprintf("%v", m["url"])),
+		MasterURL: string(fmt.Sprintf("%v", m["master_url"])),
 		Error:     string(fmt.Sprintf("%v", m["error"])),
 		Name:      string(fmt.Sprintf("%v", m["name"])),
 		Status:    string(fmt.Sprintf("%v", m["status"])),
@@ -282,6 +283,7 @@ func convertClusterToBSON(c Cluster) bson.D {
 		{"name", c.Name},
 		{"error", c.Error},
 		{"url", c.URL},
+		{"master_url", c.MasterURL},
 		{"request_id", c.RequestID},
 	}
 }

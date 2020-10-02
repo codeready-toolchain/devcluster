@@ -51,6 +51,7 @@ type Cluster struct {
 	RequestID string
 	Name      string
 	URL       string
+	MasterURL string
 	Status    string
 	Error     string
 	User      User
@@ -427,7 +428,7 @@ func (s *ClusterService) Users() ([]User, error) {
 }
 
 func clusterReady(c Cluster) bool {
-	return c.Status == StatusNormal && c.URL != ""
+	return c.Status == StatusNormal && c.URL != "" && c.MasterURL != ""
 }
 
 // clusterProvisioningPending returns true if cluster is still provisioning
@@ -459,6 +460,7 @@ func clusterFailedToDelete(c Cluster, e error) {
 		RequestID: c.RequestID,
 		Name:      c.Name,
 		URL:       c.URL,
+		MasterURL: c.MasterURL,
 		Status:    StatusFailedToDelete,
 		Error:     e.Error(),
 	})
@@ -475,6 +477,7 @@ func convertCluster(from ibmcloud.Cluster, requestID string) Cluster {
 	return Cluster{
 		ID:        from.ID,
 		URL:       console,
+		MasterURL: from.MasterURL,
 		Status:    from.State,
 		Name:      from.Name,
 		RequestID: requestID,

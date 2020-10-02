@@ -133,6 +133,7 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 			RequestID: req.ID,
 			Name:      toDelete.Name,
 			URL:       toDelete.URL,
+			MasterURL: toDelete.MasterURL,
 			Status:    "deleted",
 			Error:     "",
 		}, result.Clusters[1])
@@ -350,9 +351,10 @@ func (s *TestIntegrationSuite) markClustersAsProvisioned(service *cluster.Cluste
 	require.NoError(s.T(), err)
 	for _, c := range r.Clusters {
 		err := client.UpdateCluster(ibmcloud.Cluster{
-			ID:      c.ID,
-			State:   "normal",
-			Ingress: ibmcloud.Ingress{Hostname: fmt.Sprintf("prefix-%s", c.Name)},
+			ID:        c.ID,
+			State:     "normal",
+			Ingress:   ibmcloud.Ingress{Hostname: fmt.Sprintf("prefix-%s", c.Name)},
+			MasterURL: fmt.Sprintf("https://%s:100", c.Name),
 		})
 		require.NoError(s.T(), err)
 	}
@@ -377,6 +379,7 @@ func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
 			c.RequestID == req.ID &&
 			c.Error == "" &&
 			c.URL == "" &&
+			c.MasterURL == "" &&
 			strings.Contains(c.Name, "redhat-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
@@ -406,6 +409,7 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.RequestID == req.ID &&
 			c.Error == "" &&
 			c.URL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
+			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
 			strings.Contains(c.Name, "redhat-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
