@@ -30,7 +30,7 @@ export default function ClusterTable({ clusters, onSelect, onDeleteCluster }) {
     }
     
     const isClusterSelected = (cluster) => 
-        cluster && selectedCluster && cluster.id === selectedCluster.id;
+        cluster && selectedCluster && cluster.ID === selectedCluster.ID;
 
     return (
         <TableContainer className={classes.container} component={Paper}>
@@ -48,16 +48,16 @@ export default function ClusterTable({ clusters, onSelect, onDeleteCluster }) {
         <TableBody>
             {clusters.map((cluster) => (
             <TableRow 
-                key={cluster.id} 
+                key={cluster.ID} 
                 hover 
                 onClick={(event) => handleClusterRowClick(event, cluster)}
                 aria-checked={isClusterSelected(cluster)}
                 selected={isClusterSelected(cluster)}>
-                <TableCell component="th" scope="row">{cluster.id}</TableCell>
-                <TableCell >{cluster.name}</TableCell>
-                <TableCell align="right">{cluster.url}</TableCell>
-                <TableCell >{cluster.status}</TableCell>
-                <TableCell align="right">{cluster.error}</TableCell>
+                <TableCell component="th" scope="row">{cluster.ID}</TableCell>
+                <TableCell >{cluster.Name}</TableCell>
+                <TableCell align="right">{cluster.URL}</TableCell>
+                <TableCell >{cluster.Status}</TableCell>
+                <TableCell align="right">{cluster.Error}</TableCell>
                 <TableCell >
                     <IconButton aria-label="export" color="primary" onClick={() => onDeleteCluster(cluster)}>
                         <DeleteIcon/>

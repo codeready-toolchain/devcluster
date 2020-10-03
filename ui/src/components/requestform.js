@@ -21,8 +21,8 @@ const useStyles = makeStyles((theme) => ({
 export default function RequestForm({ zones, onSubmit }) {
   const classes = useStyles();
   
-  const [numberOfClusters, setNumberOfClusters] = React.useState(0);
-  const [deleteInHours, setDeleteInHours] = React.useState(0);
+  const [numberOfClusters, setNumberOfClusters] = React.useState(10);
+  const [deleteInHours, setDeleteInHours] = React.useState(24);
   const [zone, setZone] = React.useState('');
   const [subnet, setSubnet] = React.useState(false);
 
@@ -54,7 +54,7 @@ export default function RequestForm({ zones, onSubmit }) {
             <InputLabel id="zone-label">Zone</InputLabel>
             <Select labelId="zone-label" id="zone-select" value={zone} onChange={(event) => setZone(event.target.value)}>
                 {zones.map((zone, index) =>
-                <MenuItem key={index} value={index}>{zone}</MenuItem>
+                    <MenuItem key={index} value={zone.id}>{zone['display_name']}</MenuItem>
                 )}
             </Select>
         </FormControl>

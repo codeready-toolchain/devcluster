@@ -26,7 +26,7 @@ export default function RequestTable({ requests, onSelect }) {
     }
     
     const isRequestSelected = (request) => 
-        request && selectedRequest && request.id === selectedRequest.id;
+        request && selectedRequest && request.ID === selectedRequest.ID;
 
     return (
         <TableContainer component={Paper}>
@@ -45,17 +45,17 @@ export default function RequestTable({ requests, onSelect }) {
         <TableBody>
             {requests.map((request) => (
             <TableRow 
-                key={request.id} 
+                key={request.ID} 
                 hover 
                 onClick={(event) => handleRequestRowClick(event, request)}
                 aria-checked={isRequestSelected(request)}
                 selected={isRequestSelected(request)}>
-                <TableCell component="th" scope="row">{request.id}</TableCell>
-                <TableCell>{request.created}</TableCell>
-                <TableCell align="right">{request.numberOfClusters}</TableCell>
-                <TableCell>{request.requestedBy}</TableCell>
-                <TableCell align="right">{request.deleteInHours}</TableCell>
-                <TableCell>{request.status}</TableCell>
+                <TableCell component="th" scope="row">{request.ID}</TableCell>
+                <TableCell>{new Date(request.Created).toDateString()}</TableCell>
+                <TableCell align="right">{request.Requested}</TableCell>
+                <TableCell>{request.RequestedBy}</TableCell>
+                <TableCell align="right">{request.DeleteInHours}</TableCell>
+                <TableCell>{request.Status}</TableCell>
                 <TableCell>
                     <IconButton aria-label="export" color="primary">
                         <CloudDownloadIcon/>
