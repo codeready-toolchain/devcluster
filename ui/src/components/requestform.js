@@ -53,9 +53,9 @@ export default function RequestForm({ zones, onSubmit }) {
         <FormControl className={classes.formControl}>
             <InputLabel id="zone-label">Zone</InputLabel>
             <Select labelId="zone-label" id="zone-select" value={zone} onChange={(event) => setZone(event.target.value)}>
-                {zones.map((zone, index) =>
+                {zones?zones.map((zone, index) =>
                     <MenuItem key={index} value={zone.id}>{zone['display_name']}</MenuItem>
-                )}
+                ):null}
             </Select>
         </FormControl>
         <FormControl className={classes.formControl}>

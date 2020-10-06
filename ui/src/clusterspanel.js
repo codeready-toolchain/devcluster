@@ -1,5 +1,8 @@
 import React from 'react';
 
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+
 import { makeStyles } from '@material-ui/core/styles';
 import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
@@ -31,6 +34,15 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'auto',
     padding: '10px',
   },
+  modal: {
+    position: 'absolute',
+    left: '40%',
+    top: '40%',
+    width: '20%',
+    height: '20%',
+    backgroundColor: theme.palette.background.paper,
+    padding: theme.spacing(2, 4, 3),
+  },
 }));
 
 export default function ClustersPanel() {
@@ -57,8 +69,8 @@ export default function ClustersPanel() {
         let zones = await getZones();
         setZones(zones);
       } catch (e) {
-        console.error("error fetching zones", e.state, e.message);
-        setSnackMessage("Error fetching zones: " + e.message);
+        console.error('error fetching zones', e.message);
+        setSnackMessage('Error fetching zones: ' + e.message);
         setSnackOpen(true);
       }
       // fetch requests
@@ -66,8 +78,8 @@ export default function ClustersPanel() {
         let requests = await getClusterRequests();
         setRequests(requests);
       } catch (e) {
-        console.error("error fetching cluster requests", e.state, e.message);
-        setSnackMessage("Error fetching cluster requests: " + e.message);
+        console.error('error fetching cluster requests', e.message);
+        setSnackMessage('Error fetching cluster requests: ' + e.message);
         setSnackOpen(true);
       }  
     }
@@ -78,10 +90,10 @@ export default function ClustersPanel() {
     try {
       setSelectedRequest(request);
       let requestWithClusters = await getClusterRequest(request.ID);
-      await setClusters(requestWithClusters.Clusters);
+      setClusters(requestWithClusters.Clusters);
     } catch (e) {
-      console.error("error fetching clusters", e.state, e.message);
-      setSnackMessage("Error fetching clusters: " + e.message);
+      console.error('error fetching clusters', e.message);
+      setSnackMessage('Error fetching clusters: ' + e.message);
       setSnackOpen(true);
     }
   }
@@ -90,8 +102,8 @@ export default function ClustersPanel() {
     try {
       await requestClusters(request.numberOfClusters, request.zone, request.deleteInHours, !request.subnet);
     } catch (e) {
-      console.error("error deleting cluster", e.state, e.message);
-      setSnackMessage("Error deleting cluster: " + e.message);
+      console.error('error requesting clusters', e.message);
+      setSnackMessage('Error requesting clusters: ' + e.message);
       setSnackOpen(true);
     }
     // refresh requests
@@ -99,31 +111,47 @@ export default function ClustersPanel() {
       let requests = await getClusterRequests();
       setRequests(requests);
     } catch (e) {
-      console.error("error fetching cluster requests", e.state, e.message);
-      setSnackMessage("Error fetching cluster requests: " + e.message);
+      console.error('error fetching cluster requests', e.message);
+      setSnackMessage('Error fetching cluster requests: ' + e.message);
       setSnackOpen(true);
     }      
   }
 
-  const onDeleteCluster = async (cluster) => {
+  const onDeleteCluster = (cluster) => {
+    confirmAlert({
+      title: 'Confirm to delete cluster',
+      message: 'Cluster ' + cluster.id + 'is being deleted. This can not be reverted. Are you sure.',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: () => onConfirmDeleteCluster(cluster),
+        },
+        {
+          label: 'No',
+        }
+      ]
+    });
+  }
+
+  const onConfirmDeleteCluster = async (cluster) => {
     try {
       let response = await deleteCluster(cluster.ID);
-      setSnackMessage("Cluster deleted..");
+      setSnackMessage('Cluster deleted..');
       setSnackOpen(true);
     } catch (e) {
-      console.error("error deleting cluster", e.state, e.message);
-      setSnackMessage("Error deleting cluster: " + e.message);
+      console.error('error deleting cluster', e.state, e.message);
+      setSnackMessage('Error deleting cluster: ' + e.message);
       setSnackOpen(true);
     }
     try {
       let requestWithClusters = await getClusterRequest(selectedRequest.ID);
-      await setClusters(requestWithClusters.Clusters);
+      setClusters(requestWithClusters.Clusters);
     } catch (e) {
-      console.error("error fetching clusters", e.state, e.message);
-      setSnackMessage("Error fetching clusters: " + e.message);
+      console.error('error fetching clusters', e.state, e.message);
+      setSnackMessage('Error fetching clusters: ' + e.message);
       setSnackOpen(true);
     }
-}
+  }
 
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%' }}>
@@ -148,8 +176,8 @@ export default function ClustersPanel() {
         message={snackMessage}
         action={
           <React.Fragment>
-            <IconButton size="small" aria-label="close" color="inherit" onClick={handleSnackClose}>
-              <CloseIcon fontSize="small" />
+            <IconButton size='small' aria-label='close' color='inherit' onClick={handleSnackClose}>
+              <CloseIcon fontSize='small' />
             </IconButton>
           </React.Fragment>
         }

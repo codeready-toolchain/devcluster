@@ -43,7 +43,7 @@ export default function RequestTable({ requests, onSelect }) {
             </TableRow>
         </TableHead>
         <TableBody>
-            {requests.map((request) => (
+            {requests?requests.map((request) => (
             <TableRow 
                 key={request.ID} 
                 hover 
@@ -62,7 +62,7 @@ export default function RequestTable({ requests, onSelect }) {
                     </IconButton>
                 </TableCell>
             </TableRow>
-            ))}
+            )):null}
         </TableBody>
         </Table>
         </TableContainer>

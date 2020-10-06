@@ -53,15 +53,15 @@ export default function App() {
   const [keycloak, setKeycloak] = React.useState();
   const [authenticated, setAuthenticated] = React.useState(false);
   const [username, setUsername] = React.useState();
-  
+
   React.useEffect(() => {
     const Keycloak = window.Keycloak;
     const keycloakClient = new Keycloak("./keycloak.json");
     keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
       .success(authenticated => {
+        axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
         setKeycloak(keycloakClient);
         setAuthenticated(authenticated);
-        axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
         keycloakClient.loadUserInfo().success(function(data) {
           setUsername(data.preferred_username)
         });
@@ -85,14 +85,16 @@ export default function App() {
             }
           </Toolbar>
         </AppBar>
-        <AppBar position="static" color="default">
-          <Tabs aria-label="main-tabs" value={activeTab} onChange={handleChange} >
-            <Tab label="Clusters" value="tab-clusters" />
-            <Tab label="Users" value="tab-users" />
-          </Tabs>
-        </AppBar>
-        {activeTab === 'tab-clusters' ? <div className={classes.tabPanel}><ClustersPanel key="tab-clusters" /></div> : null}
-        {activeTab === 'tab-users' ? <div className={classes.tabPanel}><ClustersPanel key="tab-users" /></div> : null}
+        { authenticated &&
+          <AppBar position="static" color="default">
+            <Tabs aria-label="main-tabs" value={activeTab} onChange={handleChange} >
+              <Tab label="Clusters" value="tab-clusters" />
+              <Tab label="Users" value="tab-users" />
+            </Tabs>
+          </AppBar>
+        } 
+        {authenticated && activeTab === 'tab-clusters' ? <div className={classes.tabPanel}><ClustersPanel key="tab-clusters" /></div> : null}
+        {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanel}><ClustersPanel key="tab-users" /></div> : null}
       </div>
   );
 }

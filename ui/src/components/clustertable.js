@@ -46,7 +46,7 @@ export default function ClusterTable({ clusters, onSelect, onDeleteCluster }) {
             </TableRow>
         </TableHead>
         <TableBody>
-            {clusters.map((cluster) => (
+            {clusters?clusters.map((cluster) => (
             <TableRow 
                 key={cluster.ID} 
                 hover 
@@ -64,7 +64,7 @@ export default function ClusterTable({ clusters, onSelect, onDeleteCluster }) {
                     </IconButton>
                 </TableCell>
             </TableRow>
-            ))}
+            )):null}
         </TableBody>
         </Table>
         </TableContainer>
