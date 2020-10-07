@@ -14,7 +14,9 @@ import Button from '@material-ui/core/Button';
 const useStyles = makeStyles((theme) => ({
   formControl: {
     margin: theme.spacing(1),
-    minWidth: 220,
+  },
+  formRow: {
+    marginTop: theme.spacing(1),
   },
 }));
 
@@ -36,13 +38,13 @@ export default function RequestForm({ zones, onSubmit }) {
   }
 
   return (
-    <FormGroup row>
-        <FormControl className={classes.formControl}>
-            <InputLabel id="clustern-label">Number of Clusters</InputLabel>
+    <FormGroup className={classes.formRow} row>
+        <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
+            <InputLabel id='clustern-label'>Number of Clusters</InputLabel>
             <Slider
                 defaultValue={10}
-                aria-labelledby="clustern-label"
-                valueLabelDisplay="auto"
+                aria-labelledby='clustern-label'
+                valueLabelDisplay='auto'
                 step={10}
                 marks
                 min={10}
@@ -50,20 +52,12 @@ export default function RequestForm({ zones, onSubmit }) {
                 onChange={(event, newValue) => setNumberOfClusters(newValue)}
             />
         </FormControl>
-        <FormControl className={classes.formControl}>
-            <InputLabel id="zone-label">Zone</InputLabel>
-            <Select labelId="zone-label" id="zone-select" value={zone} onChange={(event) => setZone(event.target.value)}>
-                {zones?zones.map((zone, index) =>
-                    <MenuItem key={index} value={zone.id}>{zone['display_name']}</MenuItem>
-                ):null}
-            </Select>
-        </FormControl>
-        <FormControl className={classes.formControl}>
-            <InputLabel id="ttl-label">Delete in Hours</InputLabel>
+        <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
+            <InputLabel id='ttl-label'>Delete in Hours</InputLabel>
             <Slider
                 defaultValue={10}
-                aria-labelledby="ttl-label"
-                valueLabelDisplay="auto"
+                aria-labelledby='ttl-label'
+                valueLabelDisplay='auto'
                 step={24}
                 marks
                 min={24}
@@ -71,14 +65,22 @@ export default function RequestForm({ zones, onSubmit }) {
                 onChange={(event, newValue) => setDeleteInHours(newValue)}
             />
         </FormControl>
+        <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
+            <InputLabel id='zone-label'>Zone</InputLabel>
+            <Select labelId='zone-label' id='zone-select' value={zone} onChange={(event) => setZone(event.target.value)}>
+                {zones?zones.map((zone, index) =>
+                    <MenuItem key={index} value={zone.id}>{zone['display_name']}</MenuItem>
+                ):null}
+            </Select>
+        </FormControl>
         <FormControl className={classes.formControl}>
             <FormControlLabel
-                control={<Checkbox checked={subnet} onChange={(event) => setSubnet(event.target.checked)} name="subnet" />}
-                label="Subnet"
+                control={<Checkbox checked={subnet} onChange={(event) => setSubnet(event.target.checked)} name='subnet' />}
+                label='Subnet'
             />
         </FormControl>
         <FormControl className={classes.formControl}>
-            <Button variant="contained" onClick={() => onClickRequest()}>Request Clusters</Button>
+            <Button variant='contained' onClick={() => onClickRequest()}>Request Clusters</Button>
         </FormControl>
     </FormGroup>
   )

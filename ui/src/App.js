@@ -13,6 +13,8 @@ import Tabs from '@material-ui/core/Tabs';
 import ClustersPanel from './clusterspanel'
 
 import logo from './redhat-logo.svg';
+import rhdlogo from './rhdeveloper-logo.svg';
+import openshiftlogo from './openshift-logo.svg';
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -31,6 +33,15 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'auto',
     padding: "15px",
   },
+  tabPanelCentered: {
+    display: 'flex',
+    flexGrow: 1,
+    flexDirection: "column",
+    overflow: 'auto',
+    padding: "15px",
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     flexGrow: 1,
     paddingLeft: "25px",
@@ -38,6 +49,31 @@ const useStyles = makeStyles((theme) => ({
   },
   toplogo: {
     height: "35px",
+  },
+  userContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+
+  },
+  username: {
+    paddingRight: '10px',
+  },
+  loginRequiredPanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerLogo: {
+    height: '100px',
+    marginBottom: '20px'
+  },
+  centerButton: {
+    marginTop: '10px'
   },
 }));
 
@@ -77,14 +113,22 @@ export default function App() {
           <Toolbar>
             <img src={logo} className={classes.toplogo} alt="Red Hat" />
             <Typography variant="h6" align="left" className={classes.title}>Dev Clusters Dashboard</Typography>
-            { !authenticated && <Button color="inherit" onClick={() => keycloak.login()}>Login</Button> }
+            { !authenticated && <Button variant="contained" color="primary" onClick={() => keycloak.login()}>Login</Button> }
             { authenticated && 
-              <div>
-                <Typography align="left" className={classes.username}>{username} <Button color="inherit" onClick={() => keycloak.logout()}>Logout</Button></Typography>
+              <div className={classes.userContainer}>
+                <Typography align="left" className={classes.username}>{username}</Typography>
+                <Button variant="contained" color="primary" onClick={() => keycloak.logout()}>Logout</Button>
               </div>
             }
           </Toolbar>
         </AppBar>
+        { !authenticated && 
+          <div className={classes.loginRequiredPanel}>
+            <img src={rhdlogo} className={classes.centerLogo} alt="Red Hat" />
+            <Typography>Please log in to the Dev Clusters Dashboard</Typography>
+            <Button variant="contained" color="primary" className={classes.centerButton} onClick={() => keycloak.login()}>Login</Button>
+          </div>
+        }
         { authenticated &&
           <AppBar position="static" color="default">
             <Tabs aria-label="main-tabs" value={activeTab} onChange={handleChange} >
@@ -94,7 +138,10 @@ export default function App() {
           </AppBar>
         } 
         {authenticated && activeTab === 'tab-clusters' ? <div className={classes.tabPanel}><ClustersPanel key="tab-clusters" /></div> : null}
-        {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanel}><ClustersPanel key="tab-users" /></div> : null}
+        {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanelCentered}>
+          <img src={openshiftlogo} className={classes.centerLogo} alt="Red Hat" />
+          <Typography>Not yet implemented..</Typography>
+        </div> : null}
       </div>
   );
 }

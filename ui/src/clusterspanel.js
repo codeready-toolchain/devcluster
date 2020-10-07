@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { ExportToCsv } from 'export-to-csv';
+
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 
@@ -117,10 +119,41 @@ export default function ClustersPanel() {
     }      
   }
 
+  const onExportRequest = (request) => {      
+      getClusterRequest(request.ID).then((result) => {
+        let exportData = [];
+        let clusters = result.Clusters;
+        clusters.map((cluster) => {
+          exportData.push({
+            'Cluster Id': cluster.ID,
+            'Cluster Name': cluster.Name,
+            'Master URL': cluster.MasterURL,
+            'User Id': cluster.User.ID,
+            'User E-Mail': cluster.User.Email,
+            'User Password': cluster.User.Password,
+            'User Policy Id': cluster.User.PolicyID,
+            'User CloudDirect Id': cluster.User.CloudDirectID,
+          });
+        });
+        const options = { 
+          fieldSeparator: ',',
+          quoteStrings: '"',
+          decimalSeparator: '.',
+          showLabels: true, 
+          showTitle: false,
+          useTextFile: false,
+          useBom: true,
+          useKeysAsHeaders: true,
+        };
+        const csvExporter = new ExportToCsv(options);
+        csvExporter.generateCsv(exportData);
+      })
+  }
+
   const onDeleteCluster = (cluster) => {
     confirmAlert({
       title: 'Confirm to delete cluster',
-      message: 'Cluster ' + cluster.id + 'is being deleted. This can not be reverted. Are you sure.',
+      message: 'Cluster ' + cluster.ID + ' is being deleted. This can not be reverted. Are you sure.',
       buttons: [
         {
           label: 'Yes',
@@ -161,7 +194,7 @@ export default function ClustersPanel() {
         </div>
         <div className={classes.tables}>
           <div className={classes.table}>
-            <RequestTable requests={requests} onSelect={onSelectRequest} />
+            <RequestTable requests={requests} onSelect={onSelectRequest} onExport={onExportRequest} />
           </div>
           <div className={classes.table}>
             <ClusterTable clusters={clusters} onDeleteCluster={onDeleteCluster} />

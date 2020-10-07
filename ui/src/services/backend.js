@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-var baseUrl = "https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com";
+var baseUrl = 'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com';
 
 // gets zones
 export const getZones = async () => {
@@ -32,10 +32,13 @@ export const getClusterRequests = async () => {
   
 // gets the cluster request.
 export const getClusterRequest = async (id) => {
+  var bodyFormData = new FormData();
+  bodyFormData.append('id', id);
   let resp = await axios({
     method: 'GET',
-    url: baseUrl + '/api/v1/cluster-req',
-    params: { 'id': id },
+    url: baseUrl + '/api/v1/cluster-req/' + id,
+    data: bodyFormData,
+    headers: {'Content-Type': 'multipart/form-data' },
   });
   if (resp.status >= 200 && resp.status < 300) {
     return Promise.resolve(resp.data);
@@ -47,10 +50,13 @@ export const getClusterRequest = async (id) => {
 
 // deletes the cluster.
 export const deleteCluster = async (id) => {
+  var bodyFormData = new FormData();
+  bodyFormData.append('id', id);
   let resp = await axios({
     method: 'DELETE',
-    url: baseUrl + '/api/v1/cluster',
-    params: { 'id': id },
+    url: baseUrl + '/api/v1/cluster/' + id,
+    data: bodyFormData,
+    headers: {'Content-Type': 'multipart/form-data' },
   });
   if (resp.status >= 200 && resp.status < 300) {
     return Promise.resolve(resp.data);
@@ -62,15 +68,16 @@ export const deleteCluster = async (id) => {
 
 // requests clusters.
 export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
+  var bodyFormData = new FormData();
+  bodyFormData.append('number-of-clusters', n);
+  bodyFormData.append('zone', zone);
+  bodyFormData.append('delete-in-hours', deleteInHours);
+  bodyFormData.append('no-subnet', (noSubnet?true:false));
   let resp = await axios({
     method: 'POST',
     url: baseUrl + '/api/v1/cluster-req',
-    data: {
-      "number-of-clusters": '' + n,
-      "zone": zone,
-      "delete-in-hours": deleteInHours,
-      "no-subnet": (noSubnet?true:false)
-    },
+    data: bodyFormData,
+    headers: {'Content-Type': 'multipart/form-data' },
   });
   if (resp.status >= 200 && resp.status < 300) {
     return Promise.resolve(resp.data);
@@ -86,8 +93,8 @@ export const requestUsers = async (n, startIndex) => {
     method: 'POST',
     url: baseUrl + '/api/v1/cluster-req',
     params: {
-      "number-of-users": n,
-      "start-index": startIndex,
+      'number-of-users': n,
+      'start-index': startIndex,
     }
   });
   if (resp.status >= 200 && resp.status < 300) {
