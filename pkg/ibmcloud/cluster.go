@@ -251,6 +251,7 @@ type Cluster struct {
 	Type              string  `json:"type"`
 	Crn               string  `json:"crn"`
 	Ingress           Ingress `json:"ingress"`
+	MasterURL         string  `json:"masterURL"`
 }
 
 type Ingress struct {

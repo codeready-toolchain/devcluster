@@ -104,6 +104,7 @@ func (c *MockIBMCloudClient) UpdateCluster(cluster ibmcloud.Cluster) error {
 	}
 	found.State = cluster.State
 	found.Ingress = cluster.Ingress
+	found.MasterURL = cluster.MasterURL
 	return nil
 }
 
