@@ -10,7 +10,8 @@ import Button from '@material-ui/core/Button';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 
-import ClustersPanel from './clusterspanel'
+import ClustersPanel from './clusterspanel';
+import UsersPanel from './userspanel';
 
 import logo from './redhat-logo.svg';
 import rhdlogo from './rhdeveloper-logo.svg';
@@ -138,10 +139,7 @@ export default function App() {
           </AppBar>
         } 
         {authenticated && activeTab === 'tab-clusters' ? <div className={classes.tabPanel}><ClustersPanel key="tab-clusters" /></div> : null}
-        {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanelCentered}>
-          <img src={openshiftlogo} className={classes.centerLogo} alt="Red Hat" />
-          <Typography>Not yet implemented..</Typography>
-        </div> : null}
+        {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanelCentered}><UsersPanel key="tab-users" /></div> : null}
       </div>
   );
 }

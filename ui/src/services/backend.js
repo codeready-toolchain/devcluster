@@ -89,13 +89,14 @@ export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
 
 // requests users.
 export const requestUsers = async (n, startIndex) => {
+  var bodyFormData = new FormData();
+  bodyFormData.append('number-of-users', n);
+  bodyFormData.append('start-index', startIndex);
   let resp = await axios({
     method: 'POST',
-    url: baseUrl + '/api/v1/cluster-req',
-    params: {
-      'number-of-users': n,
-      'start-index': startIndex,
-    }
+    url: baseUrl + '/api/v1/users',
+    data: bodyFormData,
+    headers: {'Content-Type': 'multipart/form-data' },
   });
   if (resp.status >= 200 && resp.status < 300) {
     return Promise.resolve(resp.data);
