@@ -92,6 +92,11 @@ objects:
                     secretKeyRef:
                       name: devcluster
                       key: mongodb.connectionstring
+                - name: DEVCLUSTER_MONGODB_CA
+                  valueFrom:
+                    secretKeyRef:
+                      name: devcluster
+                      key: mongodb.ca
   - kind: Service
     apiVersion: v1
     metadata:

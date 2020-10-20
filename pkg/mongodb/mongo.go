@@ -2,6 +2,9 @@ package mongodb
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,6 +16,7 @@ var defaultClient *mongoClient
 type Config interface {
 	GetMongodbConnectionString() string
 	GetMongodbDatabase() string
+	GetMongodbCA() string
 }
 
 type mongoClient struct {
@@ -23,7 +27,17 @@ type mongoClient struct {
 func InitDefaultClient(config Config) (func(), error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	c, err := mongo.Connect(ctx, options.Client().ApplyURI(config.GetMongodbConnectionString()))
+	opts := []*options.ClientOptions{
+		options.Client().ApplyURI(config.GetMongodbConnectionString()),
+	}
+	if ca := config.GetMongodbCA(); ca != "" {
+		roots := x509.NewCertPool()
+		if ok := roots.AppendCertsFromPEM([]byte(ca)); !ok {
+			return nil, errors.New("failed to parse the mongodb CA")
+		}
+		opts = append(opts, options.Client().SetTLSConfig(&tls.Config{RootCAs: roots}))
+	}
+	c, err := mongo.Connect(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

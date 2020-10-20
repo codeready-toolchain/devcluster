@@ -107,6 +107,7 @@ const (
 	varMongodbConnectionString = "mongodb.connection_string"
 	varMongodbDatabase         = "mongodb.database"
 	DefaultMongodbDatabase     = "devcluster"
+	varMongodbCA               = "mongodb.ca"
 )
 
 // Config encapsulates the Viper configuration which stores the
@@ -265,4 +266,9 @@ func (c *Config) GetMongodbConnectionString() string {
 // GetMongodbDatabase returns the mongo database name
 func (c *Config) GetMongodbDatabase() string {
 	return c.v.GetString(varMongodbDatabase)
+}
+
+// GetMongodbCA returns the Certificate Authority which should be used to connect to the mongo database
+func (c *Config) GetMongodbCA() string {
+	return c.v.GetString(varMongodbCA)
 }
