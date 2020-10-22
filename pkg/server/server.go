@@ -25,8 +25,14 @@ type DevClusterServer struct {
 
 // New creates a new DevClusterServer object with reasonable defaults.
 func New(config *configuration.Config) *DevClusterServer {
+	// Disable logging for the /api/v1/health endpoint so that our logs aren't overwhelmed
+	ginRouter := gin.New()
+	ginRouter.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/api/v1/health"),
+		gin.Recovery(),
+	)
 	srv := &DevClusterServer{
-		router: gin.Default(),
+		router: ginRouter,
 	}
 	gin.DefaultWriter = io.MultiWriter(os.Stdout)
 

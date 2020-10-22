@@ -8,12 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
-
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
-
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
+	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 	"github.com/codeready-toolchain/devcluster/pkg/server"
 )
 
