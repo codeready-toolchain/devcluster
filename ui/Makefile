@@ -6,6 +6,7 @@ build:
 
 ## deploy - copies the static resources into the parent project's static folder.
 deploy:
+	@mkdir -p ../pkg/assets/
 	@cp -r build/* ../pkg/assets/
 
 ## clean - cleans the build directory.
