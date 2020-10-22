@@ -98,8 +98,6 @@ function Row(props) {
 
 export default function RequestTable({ requests, onSelect, onExport }) {
 
-    const classes = useStyles();
-
     const [selectedRequest, setSelectedRequest] = React.useState();
 
     const handleRequestRowClick = (request) => {

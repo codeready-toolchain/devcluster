@@ -47,7 +47,6 @@ export default function UsersPanel() {
   const classes = useStyles();
 
   const [users, setUsers] = React.useState([]);
-  const [selectedUser, setSelectedUser] = React.useState();
   const [snackOpen, setSnackOpen] = React.useState(false);
   const [snackMessage, setSnackMessage] = React.useState();
 
@@ -74,7 +73,7 @@ export default function UsersPanel() {
   }, []);
 
   const onSelectUser = async (user) => {
-      setSelectedUser(user);
+      //setSelectedUser(user);
   }
 
   const onSubmitRequest = async (request) => {
@@ -99,7 +98,7 @@ export default function UsersPanel() {
   const onExportUsers = () => {      
       let exportData = [];
       users.map((user) => {
-        exportData.push({
+        return exportData.push({
           'User Id': user.ID,
           'User E-Mail': user.Email,
           'User Password': user.Password,

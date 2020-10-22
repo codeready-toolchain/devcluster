@@ -12,6 +12,7 @@ deploy:
 ## clean - cleans the build directory.
 clean:
 	@rm -rf node_modules
+	@rm -rf ../pkg/assets/
 
 .PHONY: help clean build deploy
 all: help

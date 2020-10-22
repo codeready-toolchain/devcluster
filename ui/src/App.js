@@ -15,7 +15,6 @@ import UsersPanel from './userspanel';
 
 import logo from './redhat-logo.svg';
 import rhdlogo from './rhdeveloper-logo.svg';
-import openshiftlogo from './openshift-logo.svg';
 
 const useStyles = makeStyles((theme) => ({
   app: {

@@ -124,7 +124,7 @@ export default function ClustersPanel() {
         let exportData = [];
         let clusters = result.Clusters;
         clusters.map((cluster) => {
-          exportData.push({
+          return exportData.push({
             'Cluster Id': cluster.ID,
             'Cluster Name': cluster.Name,
             'Master URL': cluster.MasterURL,
@@ -168,7 +168,7 @@ export default function ClustersPanel() {
 
   const onConfirmDeleteCluster = async (cluster) => {
     try {
-      let response = await deleteCluster(cluster.ID);
+      await deleteCluster(cluster.ID);
       setSnackMessage('Cluster deleted..');
       setSnackOpen(true);
     } catch (e) {
