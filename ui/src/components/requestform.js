@@ -48,7 +48,7 @@ export default function RequestForm({ zones, onSubmit }) {
                 step={1}
                 marks
                 min={1}
-                max={500}
+                max={200}
                 onChange={(event, newValue) => setNumberOfClusters(newValue)}
             />
         </FormControl>
