@@ -93,10 +93,12 @@ export default function App() {
   React.useEffect(() => {
     const Keycloak = window.Keycloak;
     var keycloakClient;
-    if (window.location.origin.startsWith("http://localhost"))
+    if (window.location.origin.startsWith("http://localhost")) {
       keycloakClient = new Keycloak("./keycloak.json");
-    else
-      keycloakClient = new Keycloak(window.location.origin + "/api/v1/authconfig");
+    } else {
+      var clientConfig = JSON.parse("{\"realm\":\"devcluster-public-prod\",\"auth-server-url\":\"https://sso.prod-preview.openshift.io/auth\",\"ssl-required\":\"none\",\"resource\":\"devcluster-public-prod\",\"clientId\":\"devcluster-public-prod\",\"public-client\":true}");
+      keycloakClient = Keycloak(clientConfig);
+    }
     keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
       .success(authenticated => {
         axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
