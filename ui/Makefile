@@ -12,7 +12,7 @@ deploy:
 clean:
 	@rm -rf node_modules
 
-.PHONY: help clean
+.PHONY: help clean build deploy
 all: help
 help: Makefile
 	@echo
