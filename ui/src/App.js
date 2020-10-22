@@ -93,7 +93,11 @@ export default function App() {
 
   React.useEffect(() => {
     const Keycloak = window.Keycloak;
-    const keycloakClient = new Keycloak("./keycloak.json");
+    var keycloakClient;
+    if (window.location.origin.startsWith("http://localhost"))
+      keycloakClient = new Keycloak("./keycloak.json");
+    else
+      keycloakClient = new Keycloak(window.location.origin + "/api/v1/authconfig");
     keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
       .success(authenticated => {
         axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
