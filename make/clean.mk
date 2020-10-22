@@ -8,3 +8,4 @@ clean:
 		rm -rf ${V_FLAG} ./vendor
 	$(Q)go clean ${X_FLAG} ./...
 	cd ui && $(MAKE) clean
+	
