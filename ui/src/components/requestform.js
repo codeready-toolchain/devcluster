@@ -42,12 +42,12 @@ export default function RequestForm({ zones, onSubmit }) {
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
             <InputLabel id='clustern-label'>Number of Clusters</InputLabel>
             <Slider
-                defaultValue={10}
+                defaultValue={1}
                 aria-labelledby='clustern-label'
                 valueLabelDisplay='auto'
-                step={10}
+                step={1}
                 marks
-                min={10}
+                min={1}
                 max={500}
                 onChange={(event, newValue) => setNumberOfClusters(newValue)}
             />
