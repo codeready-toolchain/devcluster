@@ -7,3 +7,4 @@ clean:
 		rm -rf $(OUT_DIR) && \
 		rm -rf ${V_FLAG} ./vendor
 	$(Q)go clean ${X_FLAG} ./...
+	cd ui && $(MAKE) clean

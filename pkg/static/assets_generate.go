@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	log.Init("assert-generate")
 	err := vfsgen.Generate(static.Assets, vfsgen.Options{
 		PackageName:  "static",
 		BuildTags:    "!dev",
