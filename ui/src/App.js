@@ -147,7 +147,7 @@ export default function App() {
         keycloakClient = new Keycloak("./keycloak.json");
         console.log('keycloak create complete, using local config');
         initKeycloak(keycloakClient);
-      } else {      
+      } else {
         fetch(window.location.origin + '/api/v1/authconfig')
           .then(response => response.json())
           .then((jsonData) => {
