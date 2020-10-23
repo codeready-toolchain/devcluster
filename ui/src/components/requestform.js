@@ -3,12 +3,10 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Slider from '@material-ui/core/Slider';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 
 const useStyles = makeStyles((theme) => ({
@@ -26,14 +24,12 @@ export default function RequestForm({ zones, onSubmit }) {
   const [numberOfClusters, setNumberOfClusters] = React.useState(10);
   const [deleteInHours, setDeleteInHours] = React.useState(24);
   const [zone, setZone] = React.useState('');
-  const [subnet, setSubnet] = React.useState(false);
 
   const onClickRequest = () => {
     onSubmit({
         numberOfClusters: numberOfClusters,
         zone: zone,
         deleteInHours: deleteInHours,
-        subnet: subnet,
     })
   }
 
