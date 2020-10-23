@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-var baseUrl = window.location.origin;
+var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com':window.location.origin;
 
 // gets zones
 export const getZones = async () => {
