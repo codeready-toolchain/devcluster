@@ -67,7 +67,7 @@ export const deleteCluster = async (id) => {
 }
 
 // requests clusters.
-export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
+export const requestClusters = async (n, zone, deleteInHours) => {
   var bodyFormData = new FormData();
   bodyFormData.append('number-of-clusters', n);
   bodyFormData.append('zone', zone);
