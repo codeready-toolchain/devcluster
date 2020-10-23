@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-<<<<<<< HEAD
-var baseUrl = 'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com';
-=======
 var baseUrl = window.location.origin;
->>>>>>> upstream/master
 
 // gets zones
 export const getZones = async () => {

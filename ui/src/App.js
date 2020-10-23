@@ -93,24 +93,34 @@ export default function App() {
   React.useEffect(() => {
     const Keycloak = window.Keycloak;
     var keycloakClient;
-    if (window.location.origin.startsWith("http://localhost")) {
+    if (window.location.origin.startsWith('http://localhost')) {
       keycloakClient = new Keycloak("./keycloak.json");
-    } else {
-      var clientConfig = JSON.parse("{\"realm\":\"devcluster-public-prod\",\"auth-server-url\":\"https://sso.prod-preview.openshift.io/auth\",\"ssl-required\":\"none\",\"resource\":\"devcluster-public-prod\",\"clientId\":\"devcluster-public-prod\",\"public-client\":true}");
-      keycloakClient = Keycloak(clientConfig);
+    } else {      
+      fetch(window.location.origin + '/api/v1/authconfig')
+        .then(response => response.json())
+        .then((jsonData) => {
+          console.log('fetched auth config: ' + JSON.stringify(jsonData));
+          if (!jsonData["auth-client-config"]) {
+            throw new Error('loaded auth config is malformed!'); 
+          }
+          console.log('using keycloak config: ' + JSON.stringify(jsonData["auth-client-config"]));
+          keycloakClient = Keycloak(JSON.parse(jsonData["auth-client-config"]));
+          keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
+          .success(authenticated => {
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
+            setKeycloak(keycloakClient);
+            setAuthenticated(authenticated);
+            keycloakClient.loadUserInfo().success(function(data) {
+              setUsername(data.preferred_username)
+            });
+          })
+          .error((error) => {
+            console.warn('Keycloak client init failed:', error);
+          });
+      }).catch((error) => {
+        console.error('error fetching keycloak config: ' + error)
+      })
     }
-    keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
-      .success(authenticated => {
-        axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
-        setKeycloak(keycloakClient);
-        setAuthenticated(authenticated);
-        keycloakClient.loadUserInfo().success(function(data) {
-          setUsername(data.preferred_username)
-        });
-      }) 
-      .error((error) => {
-        console.warn('Keycloak client init failed:', error);
-      });
   }, []);
   
   return (
