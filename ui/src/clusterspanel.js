@@ -102,7 +102,7 @@ export default function ClustersPanel() {
 
   const onSubmitRequest = async (request) => {
     try {
-      await requestClusters(request.numberOfClusters, request.zone, request.deleteInHours, !request.subnet);
+      await requestClusters(request.numberOfClusters, request.zone, request.deleteInHours, request.subnet);
     } catch (e) {
       console.error('error requesting clusters', e.message);
       setSnackMessage('Error requesting clusters: ' + e.message);

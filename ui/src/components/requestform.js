@@ -42,13 +42,13 @@ export default function RequestForm({ zones, onSubmit }) {
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
             <InputLabel id='clustern-label'>Number of Clusters</InputLabel>
             <Slider
-                defaultValue={10}
+                defaultValue={1}
                 aria-labelledby='clustern-label'
                 valueLabelDisplay='auto'
-                step={10}
+                step={1}
                 marks
-                min={10}
-                max={500}
+                min={1}
+                max={200}
                 onChange={(event, newValue) => setNumberOfClusters(newValue)}
             />
         </FormControl>
@@ -72,12 +72,6 @@ export default function RequestForm({ zones, onSubmit }) {
                     <MenuItem key={index} value={zone.id}>{zone['display_name']}</MenuItem>
                 ):null}
             </Select>
-        </FormControl>
-        <FormControl className={classes.formControl}>
-            <FormControlLabel
-                control={<Checkbox checked={subnet} onChange={(event) => setSubnet(event.target.checked)} name='subnet' />}
-                label='Subnet'
-            />
         </FormControl>
         <FormControl className={classes.formControl}>
             <Button variant='contained' onClick={() => onClickRequest()}>Request Clusters</Button>

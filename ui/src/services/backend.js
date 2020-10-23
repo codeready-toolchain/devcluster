@@ -1,6 +1,10 @@
 import axios from 'axios';
 
+<<<<<<< HEAD
 var baseUrl = 'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com';
+=======
+var baseUrl = window.location.origin;
+>>>>>>> upstream/master
 
 // gets zones
 export const getZones = async () => {
@@ -72,7 +76,6 @@ export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
   bodyFormData.append('number-of-clusters', n);
   bodyFormData.append('zone', zone);
   bodyFormData.append('delete-in-hours', deleteInHours);
-  bodyFormData.append('no-subnet', (noSubnet?true:false));
   let resp = await axios({
     method: 'POST',
     url: baseUrl + '/api/v1/cluster-req',
