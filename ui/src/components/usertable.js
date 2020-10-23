@@ -72,7 +72,7 @@ function Row(props) {
                         <tr><td><Typography>Id:</Typography></td><td>{row.ID}</td></tr>
                         <tr><td><Typography>CloudDirect Id:</Typography></td><td>{row.CloudDirectID}</td></tr>
                         <tr><td><Typography>E-Mail:</Typography></td><td>{row.Email}</td></tr>
-                        <tr><td><Typography>Password:</Typography></td><td>{row.Password}</td></tr>
+                        <tr><td><Typography>Password:</Typography></td><td>***</td></tr>
                         <tr><td><Typography>Policy Id:</Typography></td><td>{row.PolicyID}</td></tr>
                         <tr><td><Typography>Cluster Id:</Typography></td><td>{row.ClusterID}</td></tr>
                         <tr><td><Typography>Last Recycled:</Typography></td><td>{rowDate.toString()}</td></tr>

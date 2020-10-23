@@ -72,7 +72,6 @@ export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
   bodyFormData.append('number-of-clusters', n);
   bodyFormData.append('zone', zone);
   bodyFormData.append('delete-in-hours', deleteInHours);
-  bodyFormData.append('no-subnet', (noSubnet?true:false));
   let resp = await axios({
     method: 'POST',
     url: baseUrl + '/api/v1/cluster-req',

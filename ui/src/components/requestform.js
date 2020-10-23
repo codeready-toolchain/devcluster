@@ -74,12 +74,6 @@ export default function RequestForm({ zones, onSubmit }) {
             </Select>
         </FormControl>
         <FormControl className={classes.formControl}>
-            <FormControlLabel
-                control={<Checkbox checked={subnet} onChange={(event) => setSubnet(event.target.checked)} name='subnet' />}
-                label='Subnet'
-            />
-        </FormControl>
-        <FormControl className={classes.formControl}>
             <Button variant='contained' onClick={() => onClickRequest()}>Request Clusters</Button>
         </FormControl>
     </FormGroup>
