@@ -82,7 +82,7 @@ function Row(props) {
                         <tr><td><Typography>Error Message:</Typography></td><td>{row.Error?row.Error:'n/a'}</td></tr>
                         <tr><td><Typography>User Id:</Typography></td><td>{row.User.ID}</td></tr>
                         <tr><td><Typography>User E-Mail:</Typography></td><td>{row.User.Email}</td></tr>
-                        <tr><td><Typography>User Password:</Typography></td><td>{row.User.Password}</td></tr>
+                        <tr><td><Typography>User Password:</Typography></td><td>***</td></tr>
                         <tr><td><Typography>User Policy Id:</Typography></td><td>{row.User.PolicyID}</td></tr>
                         <tr><td><Typography>User CloudDirect Id:</Typography></td><td>{row.User.CloudDirectID}</td></tr>
                     </tbody>

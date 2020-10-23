@@ -73,7 +73,7 @@ function Row(props) {
                         <tr><td><Typography>Number of Clusters:</Typography></td><td>{row.Requested}</td></tr>
                         <tr><td><Typography>No Subnet:</Typography></td><td>{row.NoSubnet?'true':'false'}</td></tr>
                         <tr><td><Typography>Zone:</Typography></td><td>{row.Zone}</td></tr>
-                        <tr><td><Typography>Requested at:</Typography></td><td>{rowDate.toUTCString()}</td></tr>
+                        <tr><td><Typography>Requested at:</Typography></td><td>{rowDate.toString()}</td></tr>
                         <tr><td><Typography>Requested by:</Typography></td><td>{row.RequestedBy}</td></tr>
                         <tr><td><Typography>Deletes in hours:</Typography></td><td>{row.DeleteInHours}</td></tr>
                         <tr><td><Typography>Status:</Typography></td><td>{row.Status}</td></tr>
