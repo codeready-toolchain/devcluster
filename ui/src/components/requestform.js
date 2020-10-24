@@ -3,12 +3,10 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Slider from '@material-ui/core/Slider';
+import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 
 const useStyles = makeStyles((theme) => ({
@@ -26,43 +24,37 @@ export default function RequestForm({ zones, onSubmit }) {
   const [numberOfClusters, setNumberOfClusters] = React.useState(10);
   const [deleteInHours, setDeleteInHours] = React.useState(24);
   const [zone, setZone] = React.useState('');
-  const [subnet, setSubnet] = React.useState(false);
 
   const onClickRequest = () => {
     onSubmit({
         numberOfClusters: numberOfClusters,
         zone: zone,
         deleteInHours: deleteInHours,
-        subnet: subnet,
     })
   }
 
   return (
     <FormGroup className={classes.formRow} row>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
-            <InputLabel id='clustern-label'>Number of Clusters</InputLabel>
-            <Slider
-                defaultValue={1}
-                aria-labelledby='clustern-label'
-                valueLabelDisplay='auto'
-                step={1}
-                marks
-                min={1}
-                max={200}
-                onChange={(event, newValue) => setNumberOfClusters(newValue)}
+            <TextField
+                label="Number of Clusters"
+                defaultValue={10}
+                type="number"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                onChange={(event) => setNumberOfClusters(event.target.value)}
             />
         </FormControl>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
-            <InputLabel id='ttl-label'>Delete in Hours</InputLabel>
-            <Slider
-                defaultValue={10}
-                aria-labelledby='ttl-label'
-                valueLabelDisplay='auto'
-                step={24}
-                marks
-                min={24}
-                max={720}
-                onChange={(event, newValue) => setDeleteInHours(newValue)}
+            <TextField
+                label="Delete in Hours"
+                defaultValue={24}
+                type="number"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                onChange={(event) => setDeleteInHours(event.target.value)}
             />
         </FormControl>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>

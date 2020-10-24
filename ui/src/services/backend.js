@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-<<<<<<< HEAD
-var baseUrl = 'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com';
-=======
-var baseUrl = window.location.origin;
->>>>>>> upstream/master
+var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com':window.location.origin;
 
 // gets zones
 export const getZones = async () => {
@@ -71,7 +67,7 @@ export const deleteCluster = async (id) => {
 }
 
 // requests clusters.
-export const requestClusters = async (n, zone, deleteInHours, noSubnet) => {
+export const requestClusters = async (n, zone, deleteInHours) => {
   var bodyFormData = new FormData();
   bodyFormData.append('number-of-clusters', n);
   bodyFormData.append('zone', zone);

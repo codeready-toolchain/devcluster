@@ -90,27 +90,80 @@ export default function App() {
   const [authenticated, setAuthenticated] = React.useState(false);
   const [username, setUsername] = React.useState();
 
-  React.useEffect(() => {
-    const Keycloak = window.Keycloak;
-    var keycloakClient;
-    if (window.location.origin.startsWith("http://localhost")) {
-      keycloakClient = new Keycloak("./keycloak.json");
+  const loadKeycloakClient = (callback) => {
+    let url;
+    if (window.location.origin.startsWith('http://localhost')) {
+      url = 'https://sso.prod-preview.openshift.io/auth/js/keycloak.js';
     } else {
-      var clientConfig = JSON.parse("{\"realm\":\"devcluster-public-prod\",\"auth-server-url\":\"https://sso.prod-preview.openshift.io/auth\",\"ssl-required\":\"none\",\"resource\":\"devcluster-public-prod\",\"clientId\":\"devcluster-public-prod\",\"public-client\":true}");
-      keycloakClient = Keycloak(clientConfig);
+      fetch(window.location.origin + '/api/v1/authconfig')
+        .then(response => response.json())
+        .then((jsonData) => {
+          console.log('outer layer, fetched auth config: ' + JSON.stringify(jsonData));
+          if (!jsonData['auth-client-library-url']) {
+            throw new Error('outer layer, loaded auth config is malformed!'); 
+          }
+          url = jsonData['auth-client-library-url'];
+        }).catch((error) => {
+          console.error('outer layer, error fetching keycloak config: ' + error)
+        })
     }
+    console.log('outer layer, using keycloak client url: ' + url);
+    if (!document.getElementById('kc-client-script')) {
+      const script = document.createElement('script');
+      script.type = "text/javascript"
+      script.src = url; 
+      script.id = 'kc-client-script'; 
+      document.head.appendChild(script);
+      script.onload = () => {
+        console.log('outer layer loaded keycloak client script');
+        if (callback)
+          callback();
+      };
+    }
+  }
+
+  const initKeycloak = (keycloakClient) => {
     keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
-      .success(authenticated => {
-        axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
-        setKeycloak(keycloakClient);
-        setAuthenticated(authenticated);
-        keycloakClient.loadUserInfo().success(function(data) {
-          setUsername(data.preferred_username)
-        });
-      }) 
-      .error((error) => {
-        console.warn('Keycloak client init failed:', error);
+    .success(authenticated => {
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
+      setKeycloak(keycloakClient);
+      setAuthenticated(authenticated);
+      keycloakClient.loadUserInfo().success(function(data) {
+        setUsername(data.preferred_username)
       });
+      console.log('keycloak init complete');
+    })
+    .error((error) => {
+      console.warn('keycloak client init failed:', error);
+    });
+  }
+
+  React.useEffect(() => {
+    loadKeycloakClient(() => {
+      console.log('client loaded, starting auth init..');
+      const Keycloak = window.Keycloak;
+      var keycloakClient;
+      if (window.location.origin.startsWith('http://localhost')) {
+        keycloakClient = new Keycloak("./keycloak.json");
+        console.log('keycloak create complete, using local config');
+        initKeycloak(keycloakClient);
+      } else {
+        fetch(window.location.origin + '/api/v1/authconfig')
+          .then(response => response.json())
+          .then((jsonData) => {
+            console.log('fetched auth config: ' + JSON.stringify(jsonData));
+            if (!jsonData["auth-client-config"]) {
+              throw new Error('loaded keycloak config is malformed!'); 
+            }
+            console.log('using keycloak config: ' + JSON.stringify(jsonData["auth-client-config"]));
+            keycloakClient = new Keycloak(JSON.parse(jsonData["auth-client-config"]));
+            console.log('keycloak create complete, using remote config');
+            initKeycloak(keycloakClient);
+        }).catch((error) => {
+          console.error('error fetching keycloak config: ' + error)
+        });
+      }
+    });
   }, []);
   
   return (
