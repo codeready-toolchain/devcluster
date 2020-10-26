@@ -106,44 +106,42 @@ export default function App() {
     }
   }
 
-  const loadKeycloakClient = (callback) => {
-    let url;
-    if (window.location.origin.startsWith('http://localhost')) {
-      url = 'https://sso.prod-preview.openshift.io/auth/js/keycloak.js';
-      attachClientElem(url, callback);
-    } else {
-      fetch(window.location.origin + '/api/v1/authconfig')
-        .then(response => response.json())
-        .then((jsonData) => {
-          console.log('outer layer, fetched auth config: ' + JSON.stringify(jsonData));
-          if (!jsonData['auth-client-library-url']) {
-            throw new Error('outer layer, loaded auth config is malformed!'); 
-          }
-          url = jsonData['auth-client-library-url'];
-          attachClientElem(url, callback);
-        }).catch((error) => {
-          console.error('outer layer, error fetching keycloak config: ' + error)
-        })
-    }
-  }
-
-  const initKeycloak = (keycloakClient) => {
-    keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
-    .success(authenticated => {
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
-      setKeycloak(keycloakClient);
-      setAuthenticated(authenticated);
-      keycloakClient.loadUserInfo().success(function(data) {
-        setUsername(data.preferred_username)
-      });
-      console.log('keycloak init complete');
-    })
-    .error((error) => {
-      console.warn('keycloak client init failed:', error);
-    });
-  }
-
   React.useEffect(() => {
+    const initKeycloak = (keycloakClient) => {
+      keycloakClient.init({onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin})
+      .success(authenticated => {
+        axios.defaults.headers.common['Authorization'] = 'Bearer ' + keycloakClient.idToken;
+        setKeycloak(keycloakClient);
+        setAuthenticated(authenticated);
+        keycloakClient.loadUserInfo().success(function(data) {
+          setUsername(data.preferred_username)
+        });
+        console.log('keycloak init complete');
+      })
+      .error((error) => {
+        console.warn('keycloak client init failed:', error);
+      });
+    }
+    const loadKeycloakClient = (callback) => {
+      let url;
+      if (window.location.origin.startsWith('http://localhost')) {
+        url = 'https://sso.prod-preview.openshift.io/auth/js/keycloak.js';
+        attachClientElem(url, callback);
+      } else {
+        fetch(window.location.origin + '/api/v1/authconfig')
+          .then(response => response.json())
+          .then((jsonData) => {
+            console.log('outer layer, fetched auth config: ' + JSON.stringify(jsonData));
+            if (!jsonData['auth-client-library-url']) {
+              throw new Error('outer layer, loaded auth config is malformed!'); 
+            }
+            url = jsonData['auth-client-library-url'];
+            attachClientElem(url, callback);
+          }).catch((error) => {
+            console.error('outer layer, error fetching keycloak config: ' + error)
+          })
+      }
+    }  
     loadKeycloakClient(() => {
       console.log('client loaded, starting auth init..');
       const Keycloak = window.Keycloak;
