@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
+
 	"github.com/codeready-toolchain/devcluster/pkg/context"
 
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
@@ -103,7 +105,23 @@ func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
 		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching zones")
 		return
 	}
-	ctx.JSON(http.StatusOK, zones)
+	ctx.JSON(http.StatusOK, r.filterZones(ctx, zones))
+}
+
+var allowedDCs = map[string]bool{"wdc04": true, "wdc06": true, "wdc07": true, "dal10": true, "dal12": true, "dal13": true, "che01": true, "fra02": true, "fra04": true, "fra05": true, "ams03": true}
+
+// filterZones returns the filtered array of the zones/DCs allowed to be used by the client
+func (r *ClusterRequest) filterZones(ctx *gin.Context, zones []ibmcloud.Location) []ibmcloud.Location {
+	result := make([]ibmcloud.Location, 0, len(allowedDCs))
+	for _, z := range zones {
+		if allowedDCs[z.ID] {
+			result = append(result, z)
+		}
+	}
+	if len(result) < len(allowedDCs) {
+		log.Error(ctx, errors.New("not all allowed zones are available"), fmt.Sprintf("allowed zones: %v; available zones: %v", allowedDCs, zones))
+	}
+	return result
 }
 
 // DeleteHandlerCluster deletes Cluster resource
