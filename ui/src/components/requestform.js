@@ -49,8 +49,11 @@ export default function RequestForm({ zones, onSubmit }) {
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
             <TextField
                 label="Delete in Hours"
-                defaultValue={24}
+                defaultValue={155}
                 type="number"
+                InputProps={{
+                  inputProps: { min: 1, max: 170 },
+                }}
                 InputLabelProps={{
                   shrink: true,
                 }}
