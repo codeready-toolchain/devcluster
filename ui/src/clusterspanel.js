@@ -100,7 +100,23 @@ export default function ClustersPanel() {
     }
   }
 
-  const onSubmitRequest = async (request) => {
+  const onSubmitRequest = (request) => {
+    confirmAlert({
+      title: 'Confirm to create clusters',
+      message: 'Please confirm creating ' + request.numberOfClusters + ' clusters with ttl of ' + request.deleteInHours + ' hours in availability zone ' + request.zone + '.',
+      buttons: [
+        {
+          label: 'Create Clusters',
+          onClick: () => onConfirmSubmitRequest(request),
+        },
+        {
+          label: 'Cancel',
+        }
+      ]
+    });
+  }
+
+  const onConfirmSubmitRequest = async (request) => {
     try {
       await requestClusters(request.numberOfClusters, request.zone, request.deleteInHours);
     } catch (e) {
