@@ -15,6 +15,7 @@ import Typography from '@material-ui/core/Typography';
 import Collapse from '@material-ui/core/Collapse';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
+import PasswordField from 'material-ui-password-field';
 
 const useStyles = makeStyles((theme) => ({
     container: {
@@ -82,7 +83,7 @@ function Row(props) {
                         <tr><td><Typography>Error Message:</Typography></td><td>{row.Error?row.Error:'n/a'}</td></tr>
                         <tr><td><Typography>User Id:</Typography></td><td>{row.User.ID}</td></tr>
                         <tr><td><Typography>User E-Mail:</Typography></td><td>{row.User.Email}</td></tr>
-                        <tr><td><Typography>User Password:</Typography></td><td>***</td></tr>
+                        <tr><td><Typography>User Password:</Typography></td><td><PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/></td></tr>
                         <tr><td><Typography>User Policy Id:</Typography></td><td>{row.User.PolicyID}</td></tr>
                         <tr><td><Typography>User CloudDirect Id:</Typography></td><td>{row.User.CloudDirectID}</td></tr>
                     </tbody>
