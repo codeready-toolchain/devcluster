@@ -22,7 +22,7 @@ export default function RequestForm({ zones, onSubmit }) {
   const classes = useStyles();
   
   const [numberOfClusters, setNumberOfClusters] = React.useState(10);
-  const [deleteInHours, setDeleteInHours] = React.useState(24);
+  const [deleteInHours, setDeleteInHours] = React.useState(155);
   const [zone, setZone] = React.useState('');
 
   const onClickRequest = () => {
@@ -37,19 +37,22 @@ export default function RequestForm({ zones, onSubmit }) {
     <FormGroup className={classes.formRow} row>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
             <TextField
+                value={numberOfClusters}
                 label="Number of Clusters"
-                defaultValue={10}
                 type="number"
+                InputProps={{
+                  inputProps: { min: 1, max: 250 },
+                }}
                 InputLabelProps={{
                   shrink: true,
                 }}
-                onChange={(event) => setNumberOfClusters(event.target.value)}
+                onChange={(event) => event.target.value<1?setNumberOfClusters(1):event.target.value>170?setNumberOfClusters(250):setNumberOfClusters(event.target.value)}
             />
         </FormControl>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
             <TextField
+                value={deleteInHours}
                 label="Delete in Hours"
-                defaultValue={155}
                 type="number"
                 InputProps={{
                   inputProps: { min: 1, max: 170 },
@@ -57,7 +60,7 @@ export default function RequestForm({ zones, onSubmit }) {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                onChange={(event) => setDeleteInHours(event.target.value)}
+                onChange={(event) => event.target.value<1?setDeleteInHours(1):event.target.value>170?setDeleteInHours(170):setDeleteInHours(event.target.value)}
             />
         </FormControl>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
