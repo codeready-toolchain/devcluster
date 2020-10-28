@@ -408,13 +408,14 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 	for _, c := range req.Clusters {
 		dashboard := url.QueryEscape(fmt.Sprintf("https://cloud.ibm.com/kubernetes/clusters/%s/overview", c.ID))
 		redirect := url.QueryEscape("https://cloud.ibm.com/login/callback")
+		encodedLoginURL := url.QueryEscape(c.LoginURL)
 		ok := c.Status == "normal" &&
 			c.RequestID == req.ID &&
 			c.Error == "" &&
 			c.Hostname == fmt.Sprintf("prefix-%s", c.Name) &&
 			c.ConsoleURL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
 			c.LoginURL == fmt.Sprintf("https://iam.cloud.ibm.com/identity/devcluster/authorize?client_id=HOP55v1CCT&response_type=code&state=%s&redirect_uri=%s", dashboard, redirect) &&
-			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, c.LoginURL) &&
+			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
 			strings.Contains(c.Name, "redhat-")
