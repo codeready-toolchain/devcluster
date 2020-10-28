@@ -143,10 +143,10 @@ export default function ClustersPanel() {
           return exportData.push({
             'Cluster ID': cluster.ID,
             'Cluster Name': cluster.Name,
-            'Workshop URL': cluster.WorkshopURL,
-            'Login URL': cluster.LoginURL,
             'Username': cluster.User.ID,
             'User Password': cluster.User.Password,
+            'Login URL': cluster.LoginURL,
+            'Workshop URL': cluster.WorkshopURL,
           });
         });
         const options = { 
