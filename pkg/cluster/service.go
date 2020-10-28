@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -47,14 +48,18 @@ type RequestWithClusters struct {
 }
 
 type Cluster struct {
-	ID        string
-	RequestID string
-	Name      string
-	URL       string
-	MasterURL string
-	Status    string
-	Error     string
-	User      User
+	ID                  string
+	RequestID           string
+	Name                string
+	ConsoleURL          string
+	Hostname            string
+	LoginURL            string
+	WorkshopURL         string
+	IdentityProviderURL string
+	MasterURL           string
+	Status              string
+	Error               string
+	User                User
 }
 
 type User struct {
@@ -109,6 +114,7 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 			return nil, err
 		}
 		clusters[i].User = *user
+		clusters[i] = s.withURLs(clusters[i])
 	}
 	if err != nil {
 		return nil, err
@@ -117,6 +123,19 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 		Request:  *request,
 		Clusters: clusters,
 	}, nil
+}
+
+func (s *ClusterService) withURLs(c Cluster) Cluster {
+	c.IdentityProviderURL = fmt.Sprintf("https://cloud.ibm.com/authorize/%s", s.Config.GetIBMCloudIDPName())
+	dashboard := url.QueryEscape(fmt.Sprintf("https://cloud.ibm.com/kubernetes/clusters/%s/overview", c.ID))
+	redirect := url.QueryEscape("https://cloud.ibm.com/login/callback")
+	c.LoginURL = fmt.Sprintf("https://iam.cloud.ibm.com/identity/devcluster/authorize?client_id=HOP55v1CCT&response_type=code&state=%s&redirect_uri=%s", dashboard, redirect)
+	encodedLoginURL := url.QueryEscape(c.LoginURL)
+	if c.Hostname != "" && c.User.ID != "" {
+		c.WorkshopURL = fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL)
+		c.ConsoleURL = fmt.Sprintf("https://console-openshift-console.%s", c.Hostname)
+	}
+	return c
 }
 
 // CreateNewRequest creates a new request and starts provisioning clusters
@@ -379,7 +398,7 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 			}
 			// Do not return. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 		} else {
-			clusterToAdd := convertCluster(*c, r.ID)
+			clusterToAdd := s.convertCluster(*c, r.ID)
 			err := replaceCluster(clusterToAdd)
 			if err != nil {
 				return err
@@ -428,7 +447,7 @@ func (s *ClusterService) Users() ([]User, error) {
 }
 
 func clusterReady(c Cluster) bool {
-	return c.Status == StatusNormal && c.URL != "" && c.MasterURL != ""
+	return c.Status == StatusNormal && c.Hostname != "" && c.MasterURL != ""
 }
 
 // clusterProvisioningPending returns true if cluster is still provisioning
@@ -459,7 +478,7 @@ func clusterFailedToDelete(c Cluster, e error) {
 		ID:        c.ID,
 		RequestID: c.RequestID,
 		Name:      c.Name,
-		URL:       c.URL,
+		Hostname:  c.Hostname,
 		MasterURL: c.MasterURL,
 		Status:    StatusFailedToDelete,
 		Error:     e.Error(),
@@ -469,17 +488,17 @@ func clusterFailedToDelete(c Cluster, e error) {
 	}
 }
 
-func convertCluster(from ibmcloud.Cluster, requestID string) Cluster {
-	console := from.Ingress.Hostname
-	if console != "" {
-		console = "https://console-openshift-console." + console
-	}
-	return Cluster{
+func (s *ClusterService) convertCluster(from ibmcloud.Cluster, requestID string) Cluster {
+	c := Cluster{
 		ID:        from.ID,
-		URL:       console,
 		MasterURL: from.MasterURL,
 		Status:    from.State,
 		Name:      from.Name,
 		RequestID: requestID,
 	}
+	hostname := from.Ingress.Hostname
+	if hostname != "" {
+		c.Hostname = hostname
+	}
+	return c
 }
