@@ -231,3 +231,7 @@ func (c *MockConfig) GetIBMCloudAccountID() string {
 func (c *MockConfig) GetIBMCloudTenantID() string {
 	return "9876543210"
 }
+
+func (c *MockConfig) GetIBMCloudIDPName() string {
+	return "devcluster"
+}

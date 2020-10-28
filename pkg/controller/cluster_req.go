@@ -6,13 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
-
-	"github.com/codeready-toolchain/devcluster/pkg/context"
-
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	"github.com/codeready-toolchain/devcluster/pkg/context"
 	devclustererrors "github.com/codeready-toolchain/devcluster/pkg/errors"
+	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 	"github.com/codeready-toolchain/devcluster/pkg/log"
 
 	"github.com/gin-gonic/gin"

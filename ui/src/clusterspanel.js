@@ -141,14 +141,12 @@ export default function ClustersPanel() {
         let clusters = result.Clusters;
         clusters.map((cluster) => {
           return exportData.push({
-            'Cluster Id': cluster.ID,
+            'Cluster ID': cluster.ID,
             'Cluster Name': cluster.Name,
-            'Master URL': cluster.MasterURL,
-            'User Id': cluster.User.ID,
-            'User E-Mail': cluster.User.Email,
+            'Workshop URL': cluster.WorkshopURL,
+            'Login URL': cluster.LoginURL,
+            'Username': cluster.User.ID,
             'User Password': cluster.User.Password,
-            'User Policy Id': cluster.User.PolicyID,
-            'User CloudDirect Id': cluster.User.CloudDirectID,
           });
         });
         const options = { 
