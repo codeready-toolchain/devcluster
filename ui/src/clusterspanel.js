@@ -100,7 +100,23 @@ export default function ClustersPanel() {
     }
   }
 
-  const onSubmitRequest = async (request) => {
+  const onSubmitRequest = (request) => {
+    confirmAlert({
+      title: 'Confirm to create clusters',
+      message: 'Please confirm creating ' + request.numberOfClusters + ' clusters with ttl of ' + request.deleteInHours + ' hours in availability zone ' + request.zone + '.',
+      buttons: [
+        {
+          label: 'Create Clusters',
+          onClick: () => onConfirmSubmitRequest(request),
+        },
+        {
+          label: 'Cancel',
+        }
+      ]
+    });
+  }
+
+  const onConfirmSubmitRequest = async (request) => {
     try {
       await requestClusters(request.numberOfClusters, request.zone, request.deleteInHours);
     } catch (e) {
@@ -125,14 +141,12 @@ export default function ClustersPanel() {
         let clusters = result.Clusters;
         clusters.map((cluster) => {
           return exportData.push({
-            'Cluster Id': cluster.ID,
+            'Cluster ID': cluster.ID,
             'Cluster Name': cluster.Name,
-            'Master URL': cluster.MasterURL,
-            'User Id': cluster.User.ID,
-            'User E-Mail': cluster.User.Email,
+            'Username': cluster.User.ID,
             'User Password': cluster.User.Password,
-            'User Policy Id': cluster.User.PolicyID,
-            'User CloudDirect Id': cluster.User.CloudDirectID,
+            'Login URL': cluster.LoginURL,
+            'Workshop URL': cluster.WorkshopURL,
           });
         });
         const options = { 

@@ -101,8 +101,10 @@ const (
 	DefaultBMCloudApiCallRetrySec = 30
 
 	// Tenant cluster authN
-	varIBMCloudAccountID = "ibmcloud.account_id"
-	varIBMCloudTenantID  = "ibmcloud.tenant_id"
+	varIBMCloudAccountID   = "ibmcloud.account_id"
+	varIBMCloudTenantID    = "ibmcloud.tenant_id"
+	varIBMCloudIDPName     = "ibmcloud.idp_name"
+	DefaultIBMCloudIDPName = "devcluster"
 
 	varMongodbConnectionString = "mongodb.connection_string"
 	varMongodbDatabase         = "mongodb.database"
@@ -153,6 +155,7 @@ func (c *Config) setConfigDefaults() {
 	c.v.SetDefault(varNamespace, DefaultNamespace)
 	c.v.SetDefault(varMongodbDatabase, DefaultMongodbDatabase)
 	c.v.SetDefault(varIBMCloudApiCallRetrySec, DefaultBMCloudApiCallRetrySec)
+	c.v.SetDefault(varIBMCloudIDPName, DefaultIBMCloudIDPName)
 }
 
 // GetHTTPAddress returns the HTTP address (as set via default, config file, or
@@ -257,6 +260,11 @@ func (c *Config) GetIBMCloudAccountID() string {
 // GetIBMCloudTenantID returns the Cloud Directory ID
 func (c *Config) GetIBMCloudTenantID() string {
 	return c.v.GetString(varIBMCloudTenantID)
+}
+
+// GetIBMCloudIDPName returns the IDP name
+func (c *Config) GetIBMCloudIDPName() string {
+	return c.v.GetString(varIBMCloudIDPName)
 }
 
 func (c *Config) GetMongodbConnectionString() string {

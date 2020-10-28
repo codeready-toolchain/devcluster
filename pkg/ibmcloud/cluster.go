@@ -24,6 +24,7 @@ type Configuration interface {
 	GetIBMCloudApiCallRetrySec() int
 	GetIBMCloudAccountID() string
 	GetIBMCloudTenantID() string
+	GetIBMCloudIDPName() string
 }
 
 type ICClient interface {

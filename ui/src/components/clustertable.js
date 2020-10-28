@@ -15,6 +15,7 @@ import Typography from '@material-ui/core/Typography';
 import Collapse from '@material-ui/core/Collapse';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
+import PasswordField from 'material-ui-password-field';
 
 const useStyles = makeStyles((theme) => ({
     container: {
@@ -76,15 +77,15 @@ function Row(props) {
                     <tbody>
                         <tr><td><Typography>Id:</Typography></td><td>{row.ID}</td></tr>
                         <tr><td><Typography>Name:</Typography></td><td>{row.Name}</td></tr>
-                        <tr><td><Typography>URL:</Typography></td><td>{row.URL}</td></tr>
-                        <tr><td><Typography>Master URL:</Typography></td><td>{row.MasterURL}</td></tr>
                         <tr><td><Typography>Status:</Typography></td><td>{row.Status}</td></tr>
                         <tr><td><Typography>Error Message:</Typography></td><td>{row.Error?row.Error:'n/a'}</td></tr>
-                        <tr><td><Typography>User Id:</Typography></td><td>{row.User.ID}</td></tr>
-                        <tr><td><Typography>User E-Mail:</Typography></td><td>{row.User.Email}</td></tr>
-                        <tr><td><Typography>User Password:</Typography></td><td>***</td></tr>
-                        <tr><td><Typography>User Policy Id:</Typography></td><td>{row.User.PolicyID}</td></tr>
-                        <tr><td><Typography>User CloudDirect Id:</Typography></td><td>{row.User.CloudDirectID}</td></tr>
+                        <tr><td><Typography>Hostname:</Typography></td><td>{row.Hostname}</td></tr>
+                        <tr><td><Typography>Console URL:</Typography></td><td>{row.ConsoleURL}</td></tr>
+                        <tr><td><Typography>Master URL:</Typography></td><td>{row.MasterURL}</td></tr>
+                        <tr><td><Typography>Login URL:</Typography></td><td>{row.LoginURL}</td></tr>
+                        <tr><td><Typography>Workshop URL:</Typography></td><td>{row.WorkshopURL}</td></tr>
+                        <tr><td><Typography>Username:</Typography></td><td>{row.User.ID}</td></tr>
+                        <tr><td><Typography>User Password:</Typography></td><td><PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/></td></tr>
                     </tbody>
                 </Table>
               </Box>
