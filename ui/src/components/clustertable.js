@@ -137,8 +137,24 @@ function Row(props) {
                             </CopyToClipboard>
                           </td>
                         </tr>
-                        <tr><td><Typography>Username:</Typography></td><td>{row.User.ID}</td></tr>
-                        <tr><td><Typography>User Password:</Typography></td><td><PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/></td></tr>
+                        <tr>
+                            <td><Typography>Username:</Typography></td>
+                            <td className={classes.copyFlex}>
+                                {row.User.ID}
+                                <CopyToClipboard text={row.User.ID}>
+                                    <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                                </CopyToClipboard>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><Typography>User Password:</Typography></td>
+                            <td className={classes.copyFlex}>
+                                <PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/>
+                                <CopyToClipboard text={row.User.Password}>
+                                    <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                                </CopyToClipboard>
+                            </td>
+                        </tr>
                     </tbody>
                 </Table>
               </Box>
