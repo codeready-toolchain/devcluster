@@ -25,11 +25,11 @@ func (s *TestIDSuite) TestKeyManagerDefaultKeyManager() {
 	s.Run("generate ID with prefix", func() {
 		id := auth.GenerateShortID("rhd")
 		assert.True(s.T(), strings.HasPrefix(id, "rhd-"))
-		assert.True(s.T(), len(id) > 10)
+		assert.True(s.T(), len(id) > 7, "expected format: %s, actual ID: %s", "rhd-xxx", id)
 	})
 	s.Run("generate ID no prefix", func() {
 		id := auth.GenerateShortID("")
-		assert.False(s.T(), strings.HasPrefix(id, "-"))
+		assert.False(s.T(), strings.HasPrefix(id, "-"), "expected format: %s, actual ID: %s", "xxx", id)
 	})
 	s.Run("generate ID with date", func() {
 		prefix := fmt.Sprintf("rhd-%s-", time.Now().Format("Jan02"))

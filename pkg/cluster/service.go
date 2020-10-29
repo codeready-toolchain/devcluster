@@ -156,12 +156,10 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 		return Request{}, errors.Wrap(err, "unable to start new request")
 	}
 	for i := 0; i < r.Requested; i++ {
-		go func() {
-			err := s.provisionNewCluster(r)
-			if err != nil {
-				log.Error(nil, err, "unable to provision a cluster")
-			}
-		}()
+		err := s.provisionNewCluster(r)
+		if err != nil {
+			log.Error(nil, err, "unable to provision a cluster")
+		}
 	}
 
 	return r, nil
@@ -213,12 +211,10 @@ func (s *ClusterService) ResumeProvisioningRequests() error {
 		count := len(clusters)
 		if count < resumeRequest.Requested {
 			for i := count; i < resumeRequest.Requested; i++ {
-				go func() {
-					err := s.provisionNewCluster(resumeRequest)
-					if err != nil {
-						log.Error(nil, err, "unable to provision a cluster")
-					}
-				}()
+				err := s.provisionNewCluster(resumeRequest)
+				if err != nil {
+					log.Error(nil, err, "unable to resume provisioning a missing cluster")
+				}
 			}
 		}
 	}
@@ -275,15 +271,44 @@ func expired(r Request) bool {
 	return time.Unix(r.Created, 0).Add(time.Duration(r.DeleteInHours) * time.Hour).Before(time.Now())
 }
 
-// provisionNewCluster creates one new cluster
+// provisionNewCluster creates one new cluster and starts a new go routine to check the cluster status
+// returns an error if the creation failed
 func (s *ClusterService) provisionNewCluster(r Request) error {
-	name := auth.GenerateShortIDWithDate("rhd-" + r.Zone)
+	var name string
+	var uniqueNameGenerated bool
+	// Try to generate an unique cluster name
+	for i := 0; i < 100; i++ {
+		name = auth.GenerateShortIDWithDate("rhd-" + r.Zone)
+		c, err := getClusterByName(name)
+		if err != nil {
+			return err
+		}
+		if c == nil || c.Status == StatusDeleted {
+			uniqueNameGenerated = true
+			break
+		}
+		log.Infof(nil, "generated cluster name %s already taken; will try again", name)
+	}
+	if !uniqueNameGenerated {
+		return errors.New("unable to generate a unique cluster name")
+	}
+	log.Infof(nil, "starting provisioning cluster %s", name)
 	var id string
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.
 	for i := 0; i < 6; i++ {
 		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone, r.NoSubnet)
 		if err == nil {
+			c := Cluster{
+				ID:        id,
+				Status:    StatusProvisioning,
+				Name:      name,
+				RequestID: r.ID,
+			}
+			if err := replaceCluster(c); err != nil {
+				log.Error(nil, err, "unable to persist the created cluster in the DB")
+				return err
+			}
 			if err := s.assignUser(id); err != nil {
 				log.Error(nil, err, "unable to assign a user to the cluster")
 				return err
@@ -300,8 +325,14 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 		err := updateRequestStatus(r.ID, StatusFailed, err.Error())
 		return err
 	}
-	log.Infof(nil, "starting provisioning cluster %s", name)
-	return s.waitForClusterToBeReady(r, id, name)
+	go func() {
+		err := s.waitForClusterToBeReady(r, id, name)
+		if err != nil {
+			log.Error(nil, err, "failed to wait for the cluster to get ready")
+		}
+	}()
+
+	return nil
 }
 
 // Controls access to the user pool for assigning clusters
@@ -408,7 +439,6 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 				if err != nil {
 					return err
 				}
-				// TODO add user
 				break
 			}
 		}
