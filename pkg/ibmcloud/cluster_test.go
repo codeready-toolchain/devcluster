@@ -55,6 +55,21 @@ func (s *TestClusterSuite) TestGetZones() {
 			},
 		}, zones)
 	})
+
+	s.T().Run("Error getting zones", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get("global/v1/locations").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(504).
+			BodyString(`something went wrong`).
+			SetHeader("X-Request-Id", "1234509876")
+
+		_, err := cl.GetZones()
+		require.EqualError(t, err, "unable to get zones. x-request-id: 1234509876, Response status: 504 Gateway Timeout. Response body: something went wrong")
+	})
 }
 
 func (s *TestClusterSuite) TestGetCluster() {
@@ -91,6 +106,20 @@ func (s *TestClusterSuite) TestGetCluster() {
 		_, err := cl.GetCluster("some-id")
 		require.Error(t, err)
 		assert.Equal(t, errors.NewNotFoundError("cluster some-id not found", ""), err)
+	})
+
+	s.T().Run("Error getting cluster", func(t *testing.T) {
+		gock.New("https://containers.cloud.ibm.com").
+			Get("global/v2/getCluster").
+			MatchParam("cluster", "some-id").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(401).
+			BodyString(`something went wrong`).
+			SetHeader("X-Request-Id", "1234509876")
+
+		_, err := cl.GetCluster("some-id")
+		require.EqualError(t, err, "unable to get cluster. x-request-id: 1234509876, Response status: 401 Unauthorized. Response body: something went wrong")
 	})
 }
 
@@ -139,6 +168,28 @@ func (s *TestClusterSuite) TestCreateCluster() {
 		require.NoError(t, err)
 		assert.Equal(t, "some-id", id)
 	})
+
+	s.T().Run("Error when creating a cluster", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get(fmt.Sprintf("global/v1/datacenters/%s/vlans", "zone-1")).
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(200).
+			BodyString(`[{"id":"12345","type": "private"},{"id":"54321","type":"public"}]`)
+		gock.New("https://containers.cloud.ibm.com").
+			Post("global/v1/clusters").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345", false)).
+			Persist().
+			Reply(500).
+			SetHeader("X-Request-Id", "1234509876").
+			BodyString(`oopsie woopsie`)
+
+		_, err := cl.CreateCluster("john", "zone-1", false)
+		require.EqualError(t, err, "unable to create cluster. x-request-id: 1234509876, Response status: 500 Internal Server Error. Response body: oopsie woopsie")
+	})
 }
 
 func (s *TestClusterSuite) TestDeleteCluster() {
@@ -156,6 +207,22 @@ func (s *TestClusterSuite) TestDeleteCluster() {
 
 		err := cl.DeleteCluster("some-id")
 		require.NoError(t, err)
+	})
+
+	s.T().Run("Error when deleting a cluster", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Delete("/global/v1/clusters/some-id").
+			MatchParam("deleteResources", "true").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(502).
+			SetHeader("X-Request-Id", "1234509876").
+			BodyString(`error deleting cluster`)
+
+		err := cl.DeleteCluster("some-id")
+		require.EqualError(t, err, "unable to delete cluster. x-request-id: 1234509876, Response status: 502 Bad Gateway. Response body: error deleting cluster")
 	})
 }
 

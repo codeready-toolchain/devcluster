@@ -99,6 +99,18 @@ func vlanIDByType(vlans []Vlan, t string) string {
 	return ""
 }
 
+func responseErr(res *http.Response, message, respBody string) error {
+	var id string
+	ids := res.Header["X-Request-Id"]
+	if len(ids) == 0 {
+		ids = res.Header["x-request-id"]
+	}
+	if len(ids) > 0 {
+		id = ids[0]
+	}
+	return errors.Errorf("%s. x-request-id: %s, Response status: %s. Response body: %s", message, id, res.Status, respBody)
+}
+
 // GetVlans fetches the list of vlans available in the zone
 func (c *Client) GetVlans(zone string) ([]Vlan, error) {
 	token, err := c.Token()
@@ -117,7 +129,7 @@ func (c *Client) GetVlans(zone string) ([]Vlan, error) {
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("unable to get vlans. Response status: %s. Response body: %s", res.Status, bodyString)
+		return nil, responseErr(res, "unable to get vlans", bodyString)
 	}
 
 	var vlans []Vlan
@@ -153,7 +165,7 @@ func (c *Client) GetZones() ([]Location, error) {
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("unable to get zones. Response status: %s. Response body: %s", res.Status, bodyString)
+		return nil, responseErr(res, "unable to get zones", bodyString)
 	}
 
 	var locations []Location
@@ -228,7 +240,7 @@ func (c *Client) CreateCluster(name, zone string, noSubnet bool) (string, error)
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusCreated {
-		return "", errors.Errorf("unable to create cluster. Response status: %s. Response body: %s", res.Status, bodyString)
+		return "", responseErr(res, "unable to create cluster", bodyString)
 	}
 
 	var idObj ID
@@ -280,7 +292,7 @@ func (c *Client) GetCluster(id string) (*Cluster, error) {
 		return nil, devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), bodyString)
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("unable to get cluster. Response status: %s. Response body: %s", res.Status, bodyString)
+		return nil, responseErr(res, "unable to get cluster", bodyString)
 	}
 
 	var cluster Cluster
@@ -312,7 +324,7 @@ func (c *Client) DeleteCluster(id string) error {
 		return devclustererr.NewNotFoundError(fmt.Sprintf("cluster %s not found", id), "")
 	}
 	if res.StatusCode != http.StatusNoContent {
-		return errors.Errorf("unable to delete cluster. Response status: %s. Response body: %s", res.Status, bodyString)
+		return responseErr(res, "unable to delete cluster", bodyString)
 	}
 	return nil
 }
@@ -332,7 +344,7 @@ func (c *Client) obtainNewToken() (*TokenSet, error) {
 	defer rest.CloseResponse(res)
 	if res.StatusCode != http.StatusOK {
 		bodyString := rest.ReadBody(res.Body)
-		return nil, errors.Errorf("unable to obtain access token from IBM Cloud. Response status: %s. Response body: %s", res.Status, bodyString)
+		return nil, responseErr(res, "unable to obtain access token from IBM Cloud", bodyString)
 	}
 	tokenSet, err := readTokenSet(res)
 	if err != nil {

@@ -277,7 +277,7 @@ func expired(r Request) bool {
 
 // provisionNewCluster creates one new cluster
 func (s *ClusterService) provisionNewCluster(r Request) error {
-	name := auth.GenerateShortID("redhat")
+	name := auth.GenerateShortIDWithDate("rhd-" + r.Zone)
 	var id string
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.

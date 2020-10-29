@@ -381,7 +381,7 @@ func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
 			c.Error == "" &&
 			c.Hostname == "" &&
 			c.MasterURL == "" &&
-			strings.Contains(c.Name, "redhat-")
+			strings.Contains(c.Name, "rhd-lon06-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -395,7 +395,7 @@ func clustersDeleted(req *cluster.RequestWithClusters) (bool, error) {
 		ok := c.Status == "deleted" &&
 			c.RequestID == req.ID &&
 			c.Error == "" &&
-			strings.Contains(c.Name, "redhat-")
+			strings.Contains(c.Name, "rhd-lon06-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -418,7 +418,7 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
-			strings.Contains(c.Name, "redhat-")
+			strings.Contains(c.Name, "rhd-lon06-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil

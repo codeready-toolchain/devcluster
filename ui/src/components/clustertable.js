@@ -13,9 +13,11 @@ import TableRow from '@material-ui/core/TableRow';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import Collapse from '@material-ui/core/Collapse';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import PasswordField from 'material-ui-password-field';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 const useStyles = makeStyles((theme) => ({
     container: {
@@ -39,6 +41,17 @@ const useRowStyles = makeStyles({
         overflow: 'hidden',
         textOverflow: 'ellipsis',  
     },
+    oneLineTable: {
+      display: 'inline-block',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: 500,
+    },
+    copyFlex: {
+      display: 'flex',
+      alignItems: 'center'
+    }
 });
 
 function Row(props) {
@@ -79,13 +92,69 @@ function Row(props) {
                         <tr><td><Typography>Name:</Typography></td><td>{row.Name}</td></tr>
                         <tr><td><Typography>Status:</Typography></td><td>{row.Status}</td></tr>
                         <tr><td><Typography>Error Message:</Typography></td><td>{row.Error?row.Error:'n/a'}</td></tr>
-                        <tr><td><Typography>Hostname:</Typography></td><td>{row.Hostname}</td></tr>
-                        <tr><td><Typography>Console URL:</Typography></td><td>{row.ConsoleURL}</td></tr>
-                        <tr><td><Typography>Master URL:</Typography></td><td>{row.MasterURL}</td></tr>
-                        <tr><td><Typography>Login URL:</Typography></td><td>{row.LoginURL}</td></tr>
-                        <tr><td><Typography>Workshop URL:</Typography></td><td>{row.WorkshopURL}</td></tr>
-                        <tr><td><Typography>Username:</Typography></td><td>{row.User.ID}</td></tr>
-                        <tr><td><Typography>User Password:</Typography></td><td><PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/></td></tr>
+                        <tr>
+                          <td><Typography>Hostname:</Typography></td>
+                          <td className={classes.copyFlex}>
+                            <div className={classes.oneLineTable}>{!row.Hostname?'n/a':row.Hostname}</div>
+                            <CopyToClipboard text={row.Hostname}>
+                              <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><Typography>Console URL:</Typography></td>
+                          <td className={classes.copyFlex}>
+                            <div className={classes.oneLineTable}>{!row.ConsoleURL?'n/a':row.ConsoleURL}</div>
+                            <CopyToClipboard text={row.ConsoleURL}>
+                              <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><Typography>Master URL:</Typography></td>
+                          <td className={classes.copyFlex}>
+                            <div className={classes.oneLineTable}>{!row.MasterURL?'n/a':row.MasterURL}</div>
+                            <CopyToClipboard text={row.MasterURL}>
+                              <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><Typography>Login URL:</Typography></td>
+                          <td className={classes.copyFlex}>
+                            <div className={classes.oneLineTable}>{!row.LoginURL?'n/a':row.LoginURL}</div>
+                            <CopyToClipboard text={row.LoginURL}>
+                              <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><Typography>Workshop URL:</Typography></td>
+                          <td className={classes.copyFlex}>
+                            <div className={classes.oneLineTable}>{!row.WorkshopURL?'n/a':row.WorkshopURL}</div>
+                            <CopyToClipboard text={row.WorkshopURL}>
+                              <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                            </CopyToClipboard>
+                          </td>
+                        </tr>
+                        <tr>
+                            <td><Typography>Username:</Typography></td>
+                            <td className={classes.copyFlex}>
+                                {row.User.ID}
+                                <CopyToClipboard text={row.User.ID}>
+                                    <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                                </CopyToClipboard>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><Typography>User Password:</Typography></td>
+                            <td className={classes.copyFlex}>
+                                <PasswordField visible={false} defaultValue={row.User.Password} inputProps={{readOnly: true,}}/>
+                                <CopyToClipboard text={row.User.Password}>
+                                    <IconButton className={classes.copyButton} size="small"><FileCopyIcon /></IconButton>
+                                </CopyToClipboard>
+                            </td>
+                        </tr>
                     </tbody>
                 </Table>
               </Box>
