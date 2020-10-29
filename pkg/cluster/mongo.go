@@ -124,6 +124,7 @@ func replaceCluster(c Cluster) error {
 	return errors.Wrap(err, "unable to replace cluster")
 }
 
+// getCluster finds the cluster by its id. Returns nil, nil if there is no cluster with that id.
 func getCluster(id string) (*Cluster, error) {
 	res := mongodb.Clusters().FindOne(
 		context.Background(),
@@ -131,6 +132,27 @@ func getCluster(id string) (*Cluster, error) {
 	)
 	if res == nil {
 		return nil, errors.New(fmt.Sprintf("unable to find Cluster with such ID: %s", id))
+	}
+	var m bson.M
+	err := res.Decode(&m)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "unable to get cluster from mongo")
+	}
+	c := convertBSONToCluster(m)
+	return &c, nil
+}
+
+// getClusterByName finds the cluster by its name. Returns nil, nil if there is no cluster with that name.
+func getClusterByName(name string) (*Cluster, error) {
+	res := mongodb.Clusters().FindOne(
+		context.Background(),
+		bson.D{{"name", name}},
+	)
+	if res == nil {
+		return nil, errors.New(fmt.Sprintf("unable to find Cluster with such name: %s", name))
 	}
 	var m bson.M
 	err := res.Decode(&m)
