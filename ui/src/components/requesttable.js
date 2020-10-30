@@ -80,7 +80,7 @@ function Row(props) {
   const classes = useRowStyles();
   let rowDate = new Date(0);
   rowDate.setUTCSeconds(row.Created);
-  let rowDateStr = (rowDate.getMonth()+1) + "-" + rowDate.getDate() + "-" + rowDate.getFullYear() + ' ' + rowDate.getHours() + ':' + rowDate.getMinutes();
+  let rowDateStr = (rowDate.getMonth()+1) + "-" + rowDate.getDate() + "-" + rowDate.getFullYear() + ' ' + (rowDate.getHours()<10?'0'+rowDate.getHours():rowDate.getHours()) + ':' + (rowDate.getMinutes()<10?'0'+rowDate.getMinutes():rowDate.getMinutes());
   return (
     <React.Fragment>
       <TableRow className={classes.root} key={row.ID} hover onClick={() => onSelect(row)} aria-checked={selected} selected={selected}>
