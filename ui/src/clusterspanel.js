@@ -164,14 +164,21 @@ export default function ClustersPanel() {
       })
   }
 
-  const onDeleteCluster = (cluster) => {
+  const onDeleteClusters = (clusters) => {
+    if (!clusters || clusters.length === 0)
+      return;
+    let message;
+    if (clusters.length>1)
+      message = 'Deleting ' + clusters.length + ' clusters. This can not be reverted. Are you sure?'
+    else 
+      message = 'Cluster ' + clusters[0] + ' is being deleted. This can not be reverted. Are you sure?'
     confirmAlert({
-      title: 'Confirm to delete cluster',
-      message: 'Cluster ' + cluster.ID + ' is being deleted. This can not be reverted. Are you sure.',
+      title: 'Confirm to delete clusters',
+      message: message,
       buttons: [
         {
           label: 'Yes',
-          onClick: () => onConfirmDeleteCluster(cluster),
+          onClick: () => onConfirmDeleteClusters(clusters),
         },
         {
           label: 'No',
@@ -180,14 +187,16 @@ export default function ClustersPanel() {
     });
   }
 
-  const onConfirmDeleteCluster = async (cluster) => {
+  const onConfirmDeleteClusters = async (clusters) => {
     try {
-      await deleteCluster(cluster.ID);
-      setSnackMessage('Cluster deleted..');
+      clusters.forEach(async cluster => {
+        await deleteCluster(cluster.ID);        
+      });
+      setSnackMessage('Clusters deleted..');
       setSnackOpen(true);
     } catch (e) {
-      console.error('error deleting cluster', e.state, e.message);
-      setSnackMessage('Error deleting cluster: ' + e.message);
+      console.error('error deleting clusters', e.state, e.message);
+      setSnackMessage('Error deleting clusters: ' + e.message);
       setSnackOpen(true);
     }
     try {
@@ -208,10 +217,10 @@ export default function ClustersPanel() {
         </div>
         <div className={classes.tables}>
           <div className={classes.table}>
-            <RequestTable requests={requests} onSelect={onSelectRequest} onExport={onExportRequest} />
+            <RequestTable rows={requests} onSelect={onSelectRequest} onExport={onExportRequest} />
           </div>
           <div className={classes.table}>
-            <ClusterTable clusters={clusters} onDeleteCluster={onDeleteCluster} />
+            <ClusterTable rows={clusters} onDeleteClusters={onDeleteClusters} />
           </div>
         </div>
       </div>
