@@ -33,6 +33,11 @@ export default function RequestForm({ zones, onSubmit }) {
     })
   }
 
+  React.useEffect(() => {
+    if (zones && zones[0])
+      setZone(zones[0].id);
+  }, [zones]);
+
   return (
     <FormGroup className={classes.formRow} row>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
