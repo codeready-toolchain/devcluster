@@ -401,8 +401,8 @@ func (s *ClusterService) recycleUser(clusterID string) error {
 
 // waitForClusterToBeReady for the cluster to be ready
 func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterName string) error {
-	in3Hours := time.Now().Add(3 * time.Hour)
-	for time.Now().Before(in3Hours) { // timeout in three hours
+	in5Hours := time.Now().Add(5 * time.Hour)
+	for time.Now().Before(in5Hours) { // timeout in five hours
 		c, err := s.IbmCloudClient.GetCluster(clusterID)
 		if err != nil {
 			log.Error(nil, err, "unable to get cluster")

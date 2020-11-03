@@ -67,7 +67,7 @@ const useToolbarStyles = makeStyles({
 
 const headCells = [
   { id: 'ID', numeric: false, disablePadding: false, label: 'Id' },
-  { id: 'RequestDate', numeric: false, disablePadding: false, label: 'Created' },
+  { id: 'Created', numeric: false, disablePadding: false, label: 'Created' },
   { id: 'Requested', numeric: true, disablePadding: false, label: '# of Clusters' },
   { id: 'RequestedBy', numeric: false, disablePadding: false, label: 'Requested by' },
   { id: 'DeleteInHours', numeric: true, disablePadding: false, label: 'Delete in hours' },
@@ -80,7 +80,7 @@ function Row(props) {
   const classes = useRowStyles();
   let rowDate = new Date(0);
   rowDate.setUTCSeconds(row.Created);
-  let rowDateStr = (rowDate.getMonth()+1) + "-" + rowDate.getDate() + "-" + rowDate.getFullYear();
+  let rowDateStr = (rowDate.getMonth()+1) + "-" + rowDate.getDate() + "-" + rowDate.getFullYear() + ' ' + (rowDate.getHours()<10?'0'+rowDate.getHours():rowDate.getHours()) + ':' + (rowDate.getMinutes()<10?'0'+rowDate.getMinutes():rowDate.getMinutes());
   return (
     <React.Fragment>
       <TableRow className={classes.root} key={row.ID} hover onClick={() => onSelect(row)} aria-checked={selected} selected={selected}>
@@ -196,8 +196,8 @@ const EnhancedTableToolbar = (props) => {
 export default function RequestTable({ rows, onSelect, onExport }) {
   const classes = useStyles();
 
-  const [order, setOrder] = React.useState('asc');
-  const [orderBy, setOrderBy] = React.useState('calories');
+  const [order, setOrder] = React.useState('desc');
+  const [orderBy, setOrderBy] = React.useState('Created');
   const [selected, setSelected] = React.useState([]);
 
   const isSelected = (name) => selected.indexOf(name) !== -1;
