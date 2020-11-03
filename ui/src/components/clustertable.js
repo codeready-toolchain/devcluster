@@ -22,6 +22,7 @@ import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import PasswordField from 'material-ui-password-field';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { TextField } from '@material-ui/core';
 
 const useStyles = makeStyles({
     container: {
@@ -238,7 +239,7 @@ function EnhancedTableHead(props) {
 
 const EnhancedTableToolbar = (props) => {
   const classes = useToolbarStyles();
-  const { numSelected, onDeleteClick } = props;
+  const { numSelected, onDeleteClick, onUpdateSearchterm, termValue } = props;
   return (
     <Toolbar
       className={clsx(classes.root, {
@@ -247,15 +248,16 @@ const EnhancedTableToolbar = (props) => {
       {numSelected > 0 ? (
         <Typography className={classes.title} color="inherit" variant="subtitle1" component="div">
           {numSelected} selected
-        </Typography>
+          <IconButton style={{paddingTop:8}} onClick={() => onDeleteClick()}>
+            <DeleteIcon />
+          </IconButton>    
+        </Typography>      
       ) : (
         <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
           Clusters
         </Typography>
       )}
-      <IconButton disabled={numSelected > 0?false:true} onClick={() => onDeleteClick()}>
-        <DeleteIcon />
-      </IconButton>
+      <TextField value={termValue} type="search" style={{paddingBottom: 15}} label="Search" onChange={(event) => onUpdateSearchterm(event.target.value)}></TextField>
     </Toolbar>
   );
 };
@@ -263,9 +265,11 @@ const EnhancedTableToolbar = (props) => {
 export default function ClusterTable({ rows, onDeleteClusters }) {
     const classes = useStyles();
     
+    const [displayRows, setDisplayRows] = React.useState(rows);
     const [order, setOrder] = React.useState('asc');
-    const [orderBy, setOrderBy] = React.useState('calories');
+    const [orderBy, setOrderBy] = React.useState('Id');
     const [selected, setSelected] = React.useState([]);
+    const [searchterm, setSearchterm] = React.useState('');
 
     const isSelected = (name) => selected.indexOf(name) !== -1;
 
@@ -277,7 +281,7 @@ export default function ClusterTable({ rows, onDeleteClusters }) {
   
     const handleSelectAllClick = (event) => {
       if (event.target.checked) {
-        const newSelecteds = rows.map((n) => n.ID);
+        const newSelecteds = displayRows.map((n) => n.ID);
         setSelected(newSelecteds);
         return;
       }
@@ -302,6 +306,20 @@ export default function ClusterTable({ rows, onDeleteClusters }) {
       }
       setSelected(newSelected);
     };
+
+    const handleSearchterm = React.useCallback((term) => {
+      setSearchterm(term);
+      if (term === '') {
+        setDisplayRows(rows);
+      }
+      let filtered = [];
+      rows.forEach(row => {
+        if (row.ID.includes(term) || row.Name.includes(term)) {
+          filtered.push(row);
+        }
+      });
+      setDisplayRows(filtered);
+    }, [rows])
 
     const descendingComparator = (a, b, orderBy) => {
       if (b[orderBy] < a[orderBy]) {
@@ -329,10 +347,14 @@ export default function ClusterTable({ rows, onDeleteClusters }) {
       return stabilizedThis.map((el) => el[0]);
     }
 
+    React.useEffect(() => {
+        handleSearchterm('');
+    }, [rows, handleSearchterm]);
+
     return (
       <div className={classes.container}>
         <Paper className={classes.paper}>
-          <EnhancedTableToolbar numSelected={selected.length} onDeleteClick={() => onDeleteClusters(selected)}/>
+          <EnhancedTableToolbar numSelected={selected.length} onDeleteClick={() => onDeleteClusters(selected)} termValue={searchterm} onUpdateSearchterm={handleSearchterm}/>
           <TableContainer>
             <Table stickyHeader className={classes.table}>
               <EnhancedTableHead
@@ -342,10 +364,10 @@ export default function ClusterTable({ rows, onDeleteClusters }) {
                 orderBy={orderBy}
                 onSelectAllClick={handleSelectAllClick}
                 onRequestSort={handleRequestSort}
-                rowCount={rows.length}
+                rowCount={displayRows.length}
               />
               <TableBody>
-                {stableSort(rows, getComparator(order, orderBy))
+                {stableSort(displayRows, getComparator(order, orderBy))
                   .map((row) => {
                     return (
                       <Row key={row.ID} row={row} selected={isSelected(row.ID)} onSelect={(event) => handleClick(event, row.ID)} />
