@@ -190,7 +190,7 @@ export default function ClustersPanel() {
   const onConfirmDeleteClusters = async (clusters) => {
     try {
       clusters.forEach(async cluster => {
-        await deleteCluster(cluster.ID);        
+        await deleteCluster(cluster);
       });
       setSnackMessage('Clusters deleted..');
       setSnackOpen(true);
