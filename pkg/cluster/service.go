@@ -50,6 +50,7 @@ type RequestWithClusters struct {
 type Cluster struct {
 	ID                  string
 	RequestID           string
+	IBMClusterRequestID string
 	Name                string
 	ConsoleURL          string
 	Hostname            string
@@ -200,7 +201,7 @@ func (s *ClusterService) ResumeProvisioningRequests() error {
 			if clusterProvisioningPending(resumeCluster) {
 				go func() {
 					log.Infof(nil, "resuming provisioning cluster %s", resumeCluster.Name)
-					err := s.waitForClusterToBeReady(resumeRequest, resumeCluster.ID, resumeCluster.Name)
+					err := s.waitForClusterToBeReady(resumeRequest, resumeCluster)
 					if err != nil {
 						log.Error(nil, err, "unable to provision a cluster")
 					}
@@ -293,30 +294,33 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 		return errors.New("unable to generate a unique cluster name")
 	}
 	log.Infof(nil, "starting provisioning cluster %s", name)
-	var id string
+	var idObj *ibmcloud.IBMCloudClusterRequest
+	var c Cluster
 	var err error
 	// Try to create a cluster. If failing then we will make six attempts for one minute before giving up.
 	for i := 0; i < 6; i++ {
-		id, err = s.IbmCloudClient.CreateCluster(name, r.Zone, r.NoSubnet)
-		if err == nil {
-			c := Cluster{
-				ID:        id,
-				Status:    StatusProvisioning,
-				Name:      name,
-				RequestID: r.ID,
+		idObj, err = s.IbmCloudClient.CreateCluster(name, r.Zone, r.NoSubnet)
+		if err != nil {
+			log.Error(nil, err, "unable to create cluster")
+			time.Sleep(10 * time.Second)
+		} else {
+			c = Cluster{
+				ID:                  idObj.ClusterID,
+				IBMClusterRequestID: idObj.RequestID,
+				Status:              StatusProvisioning,
+				Name:                name,
+				RequestID:           r.ID,
 			}
 			if err := replaceCluster(c); err != nil {
 				log.Error(nil, err, "unable to persist the created cluster in the DB")
 				return err
 			}
-			if err := s.assignUser(id); err != nil {
+			if err := s.assignUser(idObj.ClusterID); err != nil {
 				log.Error(nil, err, "unable to assign a user to the cluster")
 				return err
 			}
 			break
 		}
-		log.Error(nil, err, "unable to create cluster")
-		time.Sleep(10 * time.Second)
 	}
 	if err != nil {
 		// Set request status to failed and break
@@ -326,7 +330,7 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 		return err
 	}
 	go func() {
-		err := s.waitForClusterToBeReady(r, id, name)
+		err := s.waitForClusterToBeReady(r, c)
 		if err != nil {
 			log.Error(nil, err, "failed to wait for the cluster to get ready")
 		}
@@ -400,7 +404,9 @@ func (s *ClusterService) recycleUser(clusterID string) error {
 }
 
 // waitForClusterToBeReady for the cluster to be ready
-func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterName string) error {
+func (s *ClusterService) waitForClusterToBeReady(r Request, clst Cluster) error {
+	clusterID := clst.ID
+	clusterName := clst.Name
 	in5Hours := time.Now().Add(5 * time.Hour)
 	for time.Now().Before(in5Hours) { // timeout in five hours
 		c, err := s.IbmCloudClient.GetCluster(clusterID)
@@ -429,7 +435,7 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clusterID, clusterNa
 			}
 			// Do not return. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 		} else {
-			clusterToAdd := s.convertCluster(*c, r.ID)
+			clusterToAdd := s.convertCluster(*c, clst, r.ID)
 			err := replaceCluster(clusterToAdd)
 			if err != nil {
 				return err
@@ -505,26 +511,28 @@ func clusterFailed(clErr error, status, id, name, reqID string) error {
 func clusterFailedToDelete(c Cluster, e error) {
 	log.Error(nil, e, "unable to delete expired cluster")
 	err := replaceCluster(Cluster{
-		ID:        c.ID,
-		RequestID: c.RequestID,
-		Name:      c.Name,
-		Hostname:  c.Hostname,
-		MasterURL: c.MasterURL,
-		Status:    StatusFailedToDelete,
-		Error:     e.Error(),
+		ID:                  c.ID,
+		RequestID:           c.RequestID,
+		IBMClusterRequestID: c.IBMClusterRequestID,
+		Name:                c.Name,
+		Hostname:            c.Hostname,
+		MasterURL:           c.MasterURL,
+		Status:              StatusFailedToDelete,
+		Error:               e.Error(),
 	})
 	if err != nil {
 		log.Error(nil, err, "unable to update status for failed to delete cluster")
 	}
 }
 
-func (s *ClusterService) convertCluster(from ibmcloud.Cluster, requestID string) Cluster {
+func (s *ClusterService) convertCluster(from ibmcloud.Cluster, mergeTo Cluster, requestID string) Cluster {
 	c := Cluster{
-		ID:        from.ID,
-		MasterURL: from.MasterURL,
-		Status:    from.State,
-		Name:      from.Name,
-		RequestID: requestID,
+		ID:                  from.ID,
+		MasterURL:           from.MasterURL,
+		Status:              from.State,
+		Name:                from.Name,
+		RequestID:           requestID,
+		IBMClusterRequestID: mergeTo.IBMClusterRequestID,
 	}
 	hostname := from.Ingress.Hostname
 	if hostname != "" {

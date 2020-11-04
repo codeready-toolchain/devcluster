@@ -288,13 +288,14 @@ func convertClusterRequestToBSON(req Request) bson.D {
 
 func convertBSONToCluster(m bson.M) Cluster {
 	return Cluster{
-		ID:        string(fmt.Sprintf("%v", m["_id"])),
-		RequestID: string(fmt.Sprintf("%v", m["request_id"])),
-		Hostname:  string(fmt.Sprintf("%v", m["hostname"])),
-		MasterURL: string(fmt.Sprintf("%v", m["master_url"])),
-		Error:     string(fmt.Sprintf("%v", m["error"])),
-		Name:      string(fmt.Sprintf("%v", m["name"])),
-		Status:    string(fmt.Sprintf("%v", m["status"])),
+		ID:                  string(fmt.Sprintf("%v", m["_id"])),
+		RequestID:           string(fmt.Sprintf("%v", m["request_id"])),
+		IBMClusterRequestID: string(fmt.Sprintf("%v", m["ic_request_id"])),
+		Hostname:            string(fmt.Sprintf("%v", m["hostname"])),
+		MasterURL:           string(fmt.Sprintf("%v", m["master_url"])),
+		Error:               string(fmt.Sprintf("%v", m["error"])),
+		Name:                string(fmt.Sprintf("%v", m["name"])),
+		Status:              string(fmt.Sprintf("%v", m["status"])),
 	}
 }
 
@@ -307,6 +308,7 @@ func convertClusterToBSON(c Cluster) bson.D {
 		{"hostname", c.Hostname},
 		{"master_url", c.MasterURL},
 		{"request_id", c.RequestID},
+		{"ic_request_id", c.IBMClusterRequestID},
 	}
 }
 
