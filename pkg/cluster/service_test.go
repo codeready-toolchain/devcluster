@@ -9,10 +9,9 @@ import (
 	"testing"
 	"time"
 
-	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
-
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 	"github.com/codeready-toolchain/devcluster/test"
@@ -129,7 +128,7 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 		// Check the deleted cluster
 		result, err := service.GetRequestWithClusters(req.ID)
 		require.NoError(s.T(), err)
-		assert.Equal(s.T(), cluster.Cluster{
+		assertClusterEquals(s.T(), cluster.Cluster{
 			ID:        toDelete.ID,
 			RequestID: req.ID,
 			Name:      toDelete.Name,
@@ -144,6 +143,17 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 		require.Error(s.T(), err)
 		assert.True(s.T(), devclustererr.IsNotFound(err))
 	})
+}
+
+func assertClusterEquals(t assert.TestingT, expected, actual cluster.Cluster) {
+	assert.Equal(t, expected.ID, actual.ID)
+	assert.Equal(t, expected.RequestID, actual.RequestID)
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.Hostname, actual.Hostname)
+	assert.Equal(t, expected.MasterURL, actual.MasterURL)
+	assert.Equal(t, expected.Status, actual.Status)
+	assert.Equal(t, expected.Error, actual.Error)
+	assert.NotEmpty(t, actual.IBMClusterRequestID)
 }
 
 func (s *TestIntegrationSuite) TestExpiredClusters() {
@@ -381,6 +391,7 @@ func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
 			c.Error == "" &&
 			c.Hostname == "" &&
 			c.MasterURL == "" &&
+			c.IBMClusterRequestID != "" &&
 			strings.Contains(c.Name, "rhd-lon06-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
@@ -418,6 +429,7 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
+			c.IBMClusterRequestID != "" &&
 			strings.Contains(c.Name, "rhd-lon06-")
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)

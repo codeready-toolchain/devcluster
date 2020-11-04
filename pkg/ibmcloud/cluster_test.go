@@ -140,11 +140,15 @@ func (s *TestClusterSuite) TestCreateCluster() {
 			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345", false)).
 			Persist().
 			Reply(201).
-			BodyString(`{"id": "some-id"}`)
+			BodyString(`{"id": "some-id"}`).
+			SetHeader("X-Request-Id", "10293")
 
 		id, err := cl.CreateCluster("john", "zone-1", false)
 		require.NoError(t, err)
-		assert.Equal(t, "some-id", id)
+		assert.Equal(t, &IBMCloudClusterRequest{
+			ClusterID: "some-id",
+			RequestID: "10293",
+		}, id)
 	})
 
 	s.T().Run("Vlan is not available", func(t *testing.T) {
@@ -166,7 +170,9 @@ func (s *TestClusterSuite) TestCreateCluster() {
 
 		id, err := cl.CreateCluster("john", "zone-1", true)
 		require.NoError(t, err)
-		assert.Equal(t, "some-id", id)
+		assert.Equal(t, &IBMCloudClusterRequest{
+			ClusterID: "some-id",
+		}, id)
 	})
 
 	s.T().Run("Error when creating a cluster", func(t *testing.T) {

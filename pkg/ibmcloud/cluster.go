@@ -30,7 +30,7 @@ type Configuration interface {
 type ICClient interface {
 	GetVlans(zone string) ([]Vlan, error)
 	GetZones() ([]Location, error)
-	CreateCluster(name, zone string, noSubnet bool) (string, error)
+	CreateCluster(name, zone string, noSubnet bool) (*IBMCloudClusterRequest, error)
 	GetCluster(id string) (*Cluster, error)
 	DeleteCluster(id string) error
 	CreateCloudDirectoryUser(username string) (*CloudDirectoryUser, error)
@@ -100,6 +100,11 @@ func vlanIDByType(vlans []Vlan, t string) string {
 }
 
 func responseErr(res *http.Response, message, respBody string) error {
+	id := extractRequestID(res)
+	return errors.Errorf("%s. x-request-id: %s, Response status: %s. Response body: %s", message, id, res.Status, respBody)
+}
+
+func extractRequestID(res *http.Response) string {
 	var id string
 	ids := res.Header["X-Request-Id"]
 	if len(ids) == 0 {
@@ -108,7 +113,7 @@ func responseErr(res *http.Response, message, respBody string) error {
 	if len(ids) > 0 {
 		id = ids[0]
 	}
-	return errors.Errorf("%s. x-request-id: %s, Response status: %s. Response body: %s", message, id, res.Status, respBody)
+	return id
 }
 
 // GetVlans fetches the list of vlans available in the zone
@@ -204,18 +209,23 @@ const ClusterConfigTemplate = `
   "workerNum": 2
 }`
 
+type IBMCloudClusterRequest struct {
+	ClusterID string
+	RequestID string
+}
+
 // CreateCluster creates a cluster
 // Returns the cluster ID
-func (c *Client) CreateCluster(name, zone string, noSubnet bool) (string, error) {
+func (c *Client) CreateCluster(name, zone string, noSubnet bool) (*IBMCloudClusterRequest, error) {
 	token, err := c.Token()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Get vlans
 	vlans, err := c.GetVlans(zone)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	private := vlanIDByType(vlans, "private")
 	if private == "" {
@@ -229,26 +239,29 @@ func (c *Client) CreateCluster(name, zone string, noSubnet bool) (string, error)
 	body := bytes.NewBuffer([]byte(fmt.Sprintf(ClusterConfigTemplate, zone, name, public, private, noSubnet)))
 	req, err := http.NewRequest("POST", "https://containers.cloud.ibm.com/global/v1/clusters", body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
 	req.Header.Add("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to create cluster")
+		return nil, errors.Wrap(err, "unable to create cluster")
 	}
 	defer rest.CloseResponse(res)
 	bodyString := rest.ReadBody(res.Body)
 	if res.StatusCode != http.StatusCreated {
-		return "", responseErr(res, "unable to create cluster", bodyString)
+		return nil, responseErr(res, "unable to create cluster", bodyString)
 	}
 
 	var idObj ID
 	err = json.Unmarshal([]byte(bodyString), &idObj)
 	if err != nil {
-		return "", errors.Wrapf(err, "error when unmarshal json with cluster ID %s ", bodyString)
+		return nil, responseErr(res, "error when unmarshal json with cluster ID", bodyString)
 	}
-	return idObj.ID, nil
+	return &IBMCloudClusterRequest{
+		ClusterID: idObj.ID,
+		RequestID: extractRequestID(res),
+	}, nil
 }
 
 type Cluster struct {

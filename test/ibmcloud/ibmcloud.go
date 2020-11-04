@@ -53,11 +53,11 @@ func (c *MockIBMCloudClient) GetVlans(zone string) ([]ibmcloud.Vlan, error) {
 	return []ibmcloud.Vlan{}, nil
 }
 
-func (c *MockIBMCloudClient) CreateCluster(name, zone string, _ bool) (string, error) {
+func (c *MockIBMCloudClient) CreateCluster(name, zone string, _ bool) (*ibmcloud.IBMCloudClusterRequest, error) {
 	defer c.clusterMux.Unlock()
 	c.clusterMux.Lock()
 	if c.clustersByName[name] != nil {
-		return "", errors.New("cluster already exist")
+		return nil, errors.New("cluster already exist")
 	}
 	cluster := &ibmcloud.Cluster{
 		ID:          uuid.NewV4().String(),
@@ -69,7 +69,11 @@ func (c *MockIBMCloudClient) CreateCluster(name, zone string, _ bool) (string, e
 	}
 	c.clustersByName[name] = cluster
 	c.clustersByID[cluster.ID] = cluster
-	return cluster.ID, nil
+
+	return &ibmcloud.IBMCloudClusterRequest{
+		ClusterID: cluster.ID,
+		RequestID: uuid.NewV4().String(),
+	}, nil
 }
 
 func (c *MockIBMCloudClient) GetCluster(id string) (*ibmcloud.Cluster, error) {
