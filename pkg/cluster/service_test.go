@@ -34,7 +34,7 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 
 func (s *TestIntegrationSuite) TestRequestClusters() {
 	s.Run("request is provisioning", func() {
-		service, mockClient := s.prepareService()
+		service, mockClient, _ := s.prepareService()
 		s.newUsers(service, 50)
 		request1 := s.newRequest(service, 10, 100)
 		request2 := s.newRequest(service, 10, 100)
@@ -99,10 +99,24 @@ func (s *TestIntegrationSuite) TestRequestClusters() {
 			})
 		})
 	})
+
+	s.Run("timeout", func() {
+		service, mockClient, mockConfig := s.prepareService()
+		mockConfig.timeout = 2 // timeout in 2 seconds
+		request := s.newRequest(service, 2, 100)
+
+		reqWithClusters, err := waitForClustersToFail(service, request)
+		require.NoError(s.T(), err)
+		// Check the cluster were created in ibm cloud
+		for _, c := range reqWithClusters.Clusters {
+			_, err := mockClient.GetCluster(c.ID)
+			assert.NoError(s.T(), err)
+		}
+	})
 }
 
 func (s *TestIntegrationSuite) TestGetZones() {
-	service, _ := s.prepareService()
+	service, _, _ := s.prepareService()
 	s.Run("get zones OK", func() {
 		zones, err := service.GetZones()
 		require.NoError(s.T(), err)
@@ -114,7 +128,7 @@ func (s *TestIntegrationSuite) TestGetZones() {
 }
 
 func (s *TestIntegrationSuite) TestDeleteCluster() {
-	service, cl := s.prepareService()
+	service, cl, _ := s.prepareService()
 	s.newUsers(service, 10)
 	s.Run("delete cluster OK", func() {
 		// Provision some clusters
@@ -157,7 +171,7 @@ func assertClusterEquals(t assert.TestingT, expected, actual cluster.Cluster) {
 }
 
 func (s *TestIntegrationSuite) TestExpiredClusters() {
-	service, cl := s.prepareService()
+	service, cl, _ := s.prepareService()
 	users := s.newUsers(service, 6)
 	s.Run("delete expired clusters OK", func() {
 		// 1. Provision two requests. One is expired and the other one is not.
@@ -334,15 +348,16 @@ func (s *TestIntegrationSuite) newUsers(service *cluster.ClusterService, n int) 
 	return users
 }
 
-func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient) {
+func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient, *MockConfig) {
 	mockClient := ibmcloudmock.NewMockIBMCloudClient()
+	mockConfig := &MockConfig{
+		config: s.Config,
+	}
 	service := &cluster.ClusterService{
 		IbmCloudClient: mockClient,
-		Config: &MockConfig{
-			config: s.Config,
-		},
+		Config:         mockConfig,
 	}
-	return service, mockClient
+	return service, mockClient, mockConfig
 }
 
 func (s *TestIntegrationSuite) provisionClusters(service *cluster.ClusterService, client *ibmcloudmock.MockIBMCloudClient, n, deleteIn int) (cluster.Request, cluster.RequestWithClusters) {
@@ -439,6 +454,20 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 	return true, nil
 }
 
+func clustersFailed(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		ok := c.Status == "failed" &&
+			c.RequestID == req.ID &&
+			c.Error != "" &&
+			c.IBMClusterRequestID != ""
+		if !ok {
+			fmt.Printf("Found clusters: %v\n", req.Clusters)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func usersAssigned(req *cluster.RequestWithClusters) (bool, error) {
 	for _, c := range req.Clusters {
 		if c.Status != "deleted" {
@@ -487,6 +516,11 @@ func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cl
 	return waitForRequest(service, request, requestReady, clustersReady, usersAssigned)
 }
 
+func waitForClustersToFail(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
+	fmt.Println("Wait for clusters to fail")
+	return waitForRequest(service, request, clustersFailed)
+}
+
 func waitForRequest(service *cluster.ClusterService, request cluster.Request, criteria ...RequestCriterion) (cluster.RequestWithClusters, error) {
 	var req cluster.RequestWithClusters
 	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
@@ -528,7 +562,8 @@ func waitForRequest(service *cluster.ClusterService, request cluster.Request, cr
 }
 
 type MockConfig struct {
-	config *configuration.Config
+	config  *configuration.Config
+	timeout int
 }
 
 func (c *MockConfig) GetIBMCloudAPIKey() string {
@@ -537,6 +572,13 @@ func (c *MockConfig) GetIBMCloudAPIKey() string {
 
 func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
 	return 1
+}
+
+func (c *MockConfig) GetIBMCloudApiCallTimeoutSec() int {
+	if c.timeout != 0 {
+		return c.timeout
+	}
+	return 100
 }
 
 func (c *MockConfig) GetIBMCloudAccountID() string {

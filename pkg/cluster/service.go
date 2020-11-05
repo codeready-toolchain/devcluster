@@ -385,6 +385,10 @@ func (s *ClusterService) obtainFreeUser(clusterID string) (*User, error) {
 func (s *ClusterService) recycleUser(clusterID string) error {
 	user, err := GetUserByClusterID(clusterID)
 	if err != nil {
+		if devclustererr.IsNotFound(err) {
+			log.Infof(nil, "cluster %s has no user to recycle", clusterID)
+			return nil
+		}
 		return err
 	}
 	if err := s.IbmCloudClient.DeleteAccessPolicy(user.PolicyID); err != nil {
@@ -407,11 +411,11 @@ func (s *ClusterService) recycleUser(clusterID string) error {
 func (s *ClusterService) waitForClusterToBeReady(r Request, clst Cluster) error {
 	clusterID := clst.ID
 	clusterName := clst.Name
-	in5Hours := time.Now().Add(5 * time.Hour)
-	for time.Now().Before(in5Hours) { // timeout in five hours
+	timeout := time.Now().Add(time.Duration(s.Config.GetIBMCloudApiCallTimeoutSec()) * time.Second)
+	for time.Now().Before(timeout) {
 		c, err := s.IbmCloudClient.GetCluster(clusterID)
 		if err != nil {
-			log.Error(nil, err, "unable to get cluster")
+			log.Errorf(nil, err, "unable to get cluster %s", clusterID)
 			if devclustererr.IsNotFound(err) {
 				// set the state to "deleted" but only if it's not in the "deleted" state already (in case of manual deletion) and return.
 				// otherwise set the status to "deleted" with the error message from IBM Cloud and try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
@@ -420,37 +424,31 @@ func (s *ClusterService) waitForClusterToBeReady(r Request, clst Cluster) error 
 					return e
 				}
 				if cl == nil || cl.Status != StatusDeleted {
-					e := clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID)
-					if e != nil {
+					if e := clusterFailed(err, StatusDeleted, clusterID, clusterName, r.ID); e != nil {
 						return e
 					}
 				} else {
 					return nil
 				}
 			} else {
-				err := clusterFailed(err, "failed", clusterID, clusterName, r.ID)
-				if err != nil {
+				if err := clusterFailed(err, StatusFailed, clusterID, clusterName, r.ID); err != nil {
 					return err
 				}
 			}
 			// Do not return. Try again in s.config.GetIBMCloudApiCallRetrySec() seconds.
 		} else {
 			clusterToAdd := s.convertCluster(*c, clst, r.ID)
-			err := replaceCluster(clusterToAdd)
-			if err != nil {
+			if err := replaceCluster(clusterToAdd); err != nil {
 				return err
 			}
 			if clusterReady(clusterToAdd) { // Ready
-				err := setRequestStatusToSuccessIfDone(r)
-				if err != nil {
-					return err
-				}
-				break
+				return setRequestStatusToSuccessIfDone(r)
 			}
 		}
 		time.Sleep(time.Duration(s.Config.GetIBMCloudApiCallRetrySec()) * time.Second)
 	}
-	return nil
+	// Timeout
+	return clusterFailed(errors.Errorf("cluster %s is still not ready after waiting for %d seconds", clusterID, s.Config.GetIBMCloudApiCallTimeoutSec()), StatusFailed, clusterID, clusterName, r.ID)
 }
 
 // CreateUsers creates n number of users

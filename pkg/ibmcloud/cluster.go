@@ -22,6 +22,7 @@ import (
 type Configuration interface {
 	GetIBMCloudAPIKey() string
 	GetIBMCloudApiCallRetrySec() int
+	GetIBMCloudApiCallTimeoutSec() int
 	GetIBMCloudAccountID() string
 	GetIBMCloudTenantID() string
 	GetIBMCloudIDPName() string

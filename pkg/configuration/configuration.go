@@ -96,9 +96,11 @@ const (
 	DefaultNamespace = "devcluster"
 
 	// General IBM Cloud configuration
-	varIBMCloudAPIKey             = "ibmcloud.apikey"
-	varIBMCloudApiCallRetrySec    = "ibmcloud.api_call_retry_sec"
-	DefaultBMCloudApiCallRetrySec = 30
+	varIBMCloudAPIKey               = "ibmcloud.apikey"
+	varIBMCloudApiCallRetrySec      = "ibmcloud.api_call_retry_sec"
+	DefaultBMCloudApiCallRetrySec   = 30
+	varIBMCloudApiCallTimeoutSec    = "ibmcloud.api_call_timeout_sec"
+	DefaultBMCloudApiCallTimeoutSec = 5 * 60 * 60 // 5 hours
 
 	// Tenant cluster authN
 	varIBMCloudAccountID   = "ibmcloud.account_id"
@@ -155,6 +157,7 @@ func (c *Config) setConfigDefaults() {
 	c.v.SetDefault(varNamespace, DefaultNamespace)
 	c.v.SetDefault(varMongodbDatabase, DefaultMongodbDatabase)
 	c.v.SetDefault(varIBMCloudApiCallRetrySec, DefaultBMCloudApiCallRetrySec)
+	c.v.SetDefault(varIBMCloudApiCallTimeoutSec, DefaultBMCloudApiCallTimeoutSec)
 	c.v.SetDefault(varIBMCloudIDPName, DefaultIBMCloudIDPName)
 }
 
@@ -240,6 +243,11 @@ func (c *Config) GetAuthClientPublicKeysURL() string {
 // GetIBMCloudApiCallRetrySec returns the number of seconds to wait between retrying calling IBM API
 func (c *Config) GetIBMCloudApiCallRetrySec() int {
 	return c.v.GetInt(varIBMCloudApiCallRetrySec)
+}
+
+// GetIBMCloudApiCallTimeoutSec returns the timeout of waitinf for the cluster to get ready in seconds
+func (c *Config) GetIBMCloudApiCallTimeoutSec() int {
+	return c.v.GetInt(varIBMCloudApiCallTimeoutSec)
 }
 
 // GetNamespace returns the namespace in which the devcluster service and host operator is running

@@ -297,6 +297,10 @@ func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
 	return 1
 }
 
+func (c *MockConfig) GetIBMCloudApiCallTimeoutSec() int {
+	return 100
+}
+
 func (c *MockConfig) GetIBMCloudAccountID() string {
 	return "0123456789"
 }
