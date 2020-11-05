@@ -260,13 +260,13 @@ func insertUser(u User) error {
 
 func convertBSONToRequest(m bson.M) Request {
 	return Request{
-		ID:            string(fmt.Sprintf("%v", m["_id"])),
-		RequestedBy:   string(fmt.Sprintf("%v", m["requested_by"])),
-		Created:       int64(m["created"].(int64)),
-		Error:         string(fmt.Sprintf("%v", m["error"])),
+		ID:            fmt.Sprintf("%v", m["_id"]),
+		RequestedBy:   fmt.Sprintf("%v", m["requested_by"]),
+		Created:       m["created"].(int64),
+		Error:         fmt.Sprintf("%v", m["error"]),
 		Requested:     int(m["requested"].(int32)),
-		Status:        string(fmt.Sprintf("%v", m["status"])),
-		Zone:          string(fmt.Sprintf("%v", m["zone"])),
+		Status:        fmt.Sprintf("%v", m["status"]),
+		Zone:          fmt.Sprintf("%v", m["zone"]),
 		DeleteInHours: int(m["delete_in_hours"].(int32)),
 		NoSubnet:      m["no_subnet"].(bool),
 	}
@@ -288,14 +288,16 @@ func convertClusterRequestToBSON(req Request) bson.D {
 
 func convertBSONToCluster(m bson.M) Cluster {
 	return Cluster{
-		ID:                  string(fmt.Sprintf("%v", m["_id"])),
-		RequestID:           string(fmt.Sprintf("%v", m["request_id"])),
-		IBMClusterRequestID: string(fmt.Sprintf("%v", m["ic_request_id"])),
-		Hostname:            string(fmt.Sprintf("%v", m["hostname"])),
-		MasterURL:           string(fmt.Sprintf("%v", m["master_url"])),
-		Error:               string(fmt.Sprintf("%v", m["error"])),
-		Name:                string(fmt.Sprintf("%v", m["name"])),
-		Status:              string(fmt.Sprintf("%v", m["status"])),
+		ID:                  fmt.Sprintf("%v", m["_id"]),
+		RequestID:           fmt.Sprintf("%v", m["request_id"]),
+		IBMClusterRequestID: fmt.Sprintf("%v", m["ic_request_id"]),
+		Hostname:            fmt.Sprintf("%v", m["hostname"]),
+		MasterURL:           fmt.Sprintf("%v", m["master_url"]),
+		Error:               fmt.Sprintf("%v", m["error"]),
+		Name:                fmt.Sprintf("%v", m["name"]),
+		Status:              fmt.Sprintf("%v", m["status"]),
+		PublicVlan:          fmt.Sprintf("%v", m["public_vlan"]),
+		PrivateVlan:         fmt.Sprintf("%v", m["private_vlan"]),
 	}
 }
 
@@ -309,18 +311,20 @@ func convertClusterToBSON(c Cluster) bson.D {
 		{"master_url", c.MasterURL},
 		{"request_id", c.RequestID},
 		{"ic_request_id", c.IBMClusterRequestID},
+		{"public_vlan", c.PublicVlan},
+		{"private_vlan", c.PrivateVlan},
 	}
 }
 
 func convertBSONToUser(m bson.M) User {
 	return User{
-		ID:            string(fmt.Sprintf("%v", m["_id"])),
-		CloudDirectID: string(fmt.Sprintf("%v", m["cloud_direct_id"])),
-		Email:         string(fmt.Sprintf("%v", m["email"])),
-		Password:      string(fmt.Sprintf("%v", m["password"])),
-		ClusterID:     string(fmt.Sprintf("%v", m["cluster_id"])),
-		PolicyID:      string(fmt.Sprintf("%v", m["policy_id"])),
-		Recycled:      int64(m["recycled"].(int64)),
+		ID:            fmt.Sprintf("%v", m["_id"]),
+		CloudDirectID: fmt.Sprintf("%v", m["cloud_direct_id"]),
+		Email:         fmt.Sprintf("%v", m["email"]),
+		Password:      fmt.Sprintf("%v", m["password"]),
+		ClusterID:     fmt.Sprintf("%v", m["cluster_id"]),
+		PolicyID:      fmt.Sprintf("%v", m["policy_id"]),
+		Recycled:      m["recycled"].(int64),
 	}
 }
 

@@ -61,6 +61,8 @@ type Cluster struct {
 	Status              string
 	Error               string
 	User                User
+	PublicVlan          string
+	PrivateVlan         string
 }
 
 type User struct {
@@ -310,6 +312,8 @@ func (s *ClusterService) provisionNewCluster(r Request) error {
 				Status:              StatusProvisioning,
 				Name:                name,
 				RequestID:           r.ID,
+				PublicVlan:          idObj.PublicVlan,
+				PrivateVlan:         idObj.PrivateVlan,
 			}
 			if err := replaceCluster(c); err != nil {
 				log.Error(nil, err, "unable to persist the created cluster in the DB")
@@ -517,6 +521,8 @@ func clusterFailedToDelete(c Cluster, e error) {
 		MasterURL:           c.MasterURL,
 		Status:              StatusFailedToDelete,
 		Error:               e.Error(),
+		PublicVlan:          c.PublicVlan,
+		PrivateVlan:         c.PrivateVlan,
 	})
 	if err != nil {
 		log.Error(nil, err, "unable to update status for failed to delete cluster")
@@ -531,6 +537,8 @@ func (s *ClusterService) convertCluster(from ibmcloud.Cluster, mergeTo Cluster, 
 		Name:                from.Name,
 		RequestID:           requestID,
 		IBMClusterRequestID: mergeTo.IBMClusterRequestID,
+		PublicVlan:          mergeTo.PublicVlan,
+		PrivateVlan:         mergeTo.PrivateVlan,
 	}
 	hostname := from.Ingress.Hostname
 	if hostname != "" {

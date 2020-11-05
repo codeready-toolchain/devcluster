@@ -73,6 +73,8 @@ func (c *MockIBMCloudClient) CreateCluster(name, zone string, _ bool) (*ibmcloud
 	return &ibmcloud.IBMCloudClusterRequest{
 		ClusterID: cluster.ID,
 		RequestID: uuid.NewV4().String(),
+		//PublicVlan:
+		//PrivateVlan:
 	}, nil
 }
 

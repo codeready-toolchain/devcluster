@@ -146,8 +146,38 @@ func (s *TestClusterSuite) TestCreateCluster() {
 		id, err := cl.CreateCluster("john", "zone-1", false)
 		require.NoError(t, err)
 		assert.Equal(t, &IBMCloudClusterRequest{
-			ClusterID: "some-id",
-			RequestID: "10293",
+			ClusterID:   "some-id",
+			RequestID:   "10293",
+			PublicVlan:  "54321",
+			PrivateVlan: "12345",
+		}, id)
+	})
+
+	s.T().Run("Multiple vlans are available", func(t *testing.T) {
+		defer gock.OffAll()
+
+		gock.New("https://containers.cloud.ibm.com").
+			Get(fmt.Sprintf("global/v1/datacenters/%s/vlans", "zone-1")).
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			Persist().
+			Reply(200).
+			BodyString(`[{"id":"12345","type": "private"},{"id":"54321","type":"public"},{"id":"34512","type": "private"},{"id":"21543","type":"public"}]`)
+		gock.New("https://containers.cloud.ibm.com").
+			Post("global/v1/clusters").
+			MatchHeader("Authorization", "Bearer "+cl.token.AccessToken).
+			JSON(fmt.Sprintf(ClusterConfigTemplate, "zone-1", "john", "54321", "12345", false)).
+			Persist().
+			Reply(201).
+			BodyString(`{"id": "some-id"}`).
+			SetHeader("X-Request-Id", "10293")
+
+		id, err := cl.CreateCluster("john", "zone-1", false)
+		require.NoError(t, err)
+		assert.Equal(t, &IBMCloudClusterRequest{
+			ClusterID:   "some-id",
+			RequestID:   "10293",
+			PublicVlan:  "54321",
+			PrivateVlan: "12345",
 		}, id)
 	})
 
@@ -170,9 +200,7 @@ func (s *TestClusterSuite) TestCreateCluster() {
 
 		id, err := cl.CreateCluster("john", "zone-1", true)
 		require.NoError(t, err)
-		assert.Equal(t, &IBMCloudClusterRequest{
-			ClusterID: "some-id",
-		}, id)
+		assert.Equal(t, "some-id", id.ClusterID)
 	})
 
 	s.T().Run("Error when creating a cluster", func(t *testing.T) {

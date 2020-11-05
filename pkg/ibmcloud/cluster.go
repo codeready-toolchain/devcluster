@@ -211,8 +211,10 @@ const ClusterConfigTemplate = `
 }`
 
 type IBMCloudClusterRequest struct {
-	ClusterID string
-	RequestID string
+	ClusterID   string
+	RequestID   string
+	PublicVlan  string
+	PrivateVlan string
 }
 
 // CreateCluster creates a cluster
@@ -259,9 +261,27 @@ func (c *Client) CreateCluster(name, zone string, noSubnet bool) (*IBMCloudClust
 	if err != nil {
 		return nil, responseErr(res, "error when unmarshal json with cluster ID", bodyString)
 	}
+
+	if public == "" || private == "" {
+		// VLANs were just created. Obtain them so we can store them in the cluster object in the DB
+		vlans, err := c.GetVlans(zone)
+		if err != nil {
+			return nil, err
+		}
+		private = vlanIDByType(vlans, "private")
+		if private == "" {
+			log.Infof(nil, "WARNING: no private vlan found for zone %s even after creating a cluster in that zone", zone)
+		}
+		public = vlanIDByType(vlans, "public")
+		if public == "" {
+			log.Infof(nil, "WARNING: no public vlan found for zone %s even after creating a cluster in that zone", zone)
+		}
+	}
 	return &IBMCloudClusterRequest{
-		ClusterID: idObj.ID,
-		RequestID: extractRequestID(res),
+		ClusterID:   idObj.ID,
+		RequestID:   extractRequestID(res),
+		PublicVlan:  public,
+		PrivateVlan: private,
 	}, nil
 }
 
