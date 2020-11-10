@@ -95,7 +95,7 @@ func setRequestStatusToSuccessIfDone(req Request) error {
 		return nil
 	}
 	for _, c := range clusters {
-		if !clusterReady(c) {
+		if c.Status != StatusDeleted && !clusterReady(c) {
 			return nil
 		}
 	}
