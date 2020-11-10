@@ -9,10 +9,9 @@ import (
 	"testing"
 	"time"
 
-	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
-
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
+	devclustererr "github.com/codeready-toolchain/devcluster/pkg/errors"
 	"github.com/codeready-toolchain/devcluster/pkg/ibmcloud"
 	"github.com/codeready-toolchain/devcluster/pkg/mongodb"
 	"github.com/codeready-toolchain/devcluster/test"
@@ -35,7 +34,7 @@ func TestRunDTestIntegrationSuite(t *testing.T) {
 
 func (s *TestIntegrationSuite) TestRequestClusters() {
 	s.Run("request is provisioning", func() {
-		service, mockClient := s.prepareService()
+		service, mockClient, _ := s.prepareService()
 		s.newUsers(service, 50)
 		request1 := s.newRequest(service, 10, 100)
 		request2 := s.newRequest(service, 10, 100)
@@ -100,10 +99,69 @@ func (s *TestIntegrationSuite) TestRequestClusters() {
 			})
 		})
 	})
+
+	s.Run("timeout", func() {
+		service, mockClient, mockConfig := s.prepareService()
+		mockConfig.timeout = 2 // timeout in 2 seconds
+		request := s.newRequest(service, 2, 100)
+
+		reqWithClusters, err := waitForClustersToFail(service, request)
+		require.NoError(s.T(), err)
+		// Check the cluster were created in ibm cloud
+		for _, c := range reqWithClusters.Clusters {
+			_, err := mockClient.GetCluster(c.ID)
+			assert.NoError(s.T(), err)
+		}
+	})
+}
+
+func (s *TestIntegrationSuite) TestGetClusters() {
+	service, mockClient, _ := s.prepareService()
+	s.newUsers(service, 20)
+
+	prepareProvisionedClusters := func(zone string) []cluster.Cluster {
+		req := s.newRequestWithZone(service, 3, 10000, zone)
+		_, err := waitForClustersToStartProvisioning(service, req)
+		require.NoError(s.T(), err)
+		s.markClustersAsProvisioned(service, mockClient, req)
+		r, err := waitForClustersToGetProvisioned(service, req)
+		require.NoError(s.T(), err)
+		return r.Clusters
+	}
+	expectedClusters := make([]cluster.Cluster, 0, 0)
+
+	// Create a few requests.
+	// One in wdc02 is provisioned.
+	expectedClusters = append(expectedClusters, prepareProvisionedClusters("wdc02")...)
+	// One more in wdc02 is also provisioned
+	expectedClusters = append(expectedClusters, prepareProvisionedClusters("wdc02")...)
+	// One more in wdc02 is deleted
+	toDelete := prepareProvisionedClusters("wdc02")
+	for _, c := range toDelete {
+		err := service.DeleteCluster(c.ID)
+		require.NoError(s.T(), err)
+	}
+	// One more in wdc02 is still provisioning
+	wdc02Provisioning := s.newRequestWithZone(service, 5, 100, "wdc02")
+	withClusters, err := waitForClustersToStartProvisioning(service, wdc02Provisioning)
+	require.NoError(s.T(), err)
+	expectedClusters = append(expectedClusters, withClusters.Clusters...)
+	require.NoError(s.T(), err)
+	// And one provisioned in a different zone: fra02
+	prepareProvisionedClusters("fra02")
+
+	// Verify that GetClusters() for wdc02 returns expected not deleted clusters
+	actualClusters, err := service.GetClusters("wdc02")
+	require.NoError(s.T(), err)
+	assert.Len(s.T(), actualClusters, 11)
+	assert.Len(s.T(), actualClusters, len(expectedClusters))
+	for _, c := range expectedClusters {
+		require.Contains(s.T(), actualClusters, c)
+	}
 }
 
 func (s *TestIntegrationSuite) TestGetZones() {
-	service, _ := s.prepareService()
+	service, _, _ := s.prepareService()
 	s.Run("get zones OK", func() {
 		zones, err := service.GetZones()
 		require.NoError(s.T(), err)
@@ -115,7 +173,7 @@ func (s *TestIntegrationSuite) TestGetZones() {
 }
 
 func (s *TestIntegrationSuite) TestDeleteCluster() {
-	service, cl := s.prepareService()
+	service, cl, _ := s.prepareService()
 	s.newUsers(service, 10)
 	s.Run("delete cluster OK", func() {
 		// Provision some clusters
@@ -129,7 +187,7 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 		// Check the deleted cluster
 		result, err := service.GetRequestWithClusters(req.ID)
 		require.NoError(s.T(), err)
-		assert.Equal(s.T(), cluster.Cluster{
+		assertClusterEquals(s.T(), cluster.Cluster{
 			ID:        toDelete.ID,
 			RequestID: req.ID,
 			Name:      toDelete.Name,
@@ -146,8 +204,19 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 	})
 }
 
+func assertClusterEquals(t assert.TestingT, expected, actual cluster.Cluster) {
+	assert.Equal(t, expected.ID, actual.ID)
+	assert.Equal(t, expected.RequestID, actual.RequestID)
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.Hostname, actual.Hostname)
+	assert.Equal(t, expected.MasterURL, actual.MasterURL)
+	assert.Equal(t, expected.Status, actual.Status)
+	assert.Equal(t, expected.Error, actual.Error)
+	assert.NotEmpty(t, actual.IBMClusterRequestID)
+}
+
 func (s *TestIntegrationSuite) TestExpiredClusters() {
-	service, cl := s.prepareService()
+	service, cl, _ := s.prepareService()
 	users := s.newUsers(service, 6)
 	s.Run("delete expired clusters OK", func() {
 		// 1. Provision two requests. One is expired and the other one is not.
@@ -308,12 +377,16 @@ func (s *TestIntegrationSuite) TestUsers() {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int, deleteIn int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn, false)
+	return s.newRequestWithZone(service, n, deleteIn, "lon06")
+}
+
+func (s *TestIntegrationSuite) newRequestWithZone(service *cluster.ClusterService, n int, deleteIn int, zone string) cluster.Request {
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, zone, deleteIn, false)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)
 	assert.Equal(s.T(), "provisioning", req.Status)
-	assert.Equal(s.T(), "lon06", req.Zone)
+	assert.Equal(s.T(), zone, req.Zone)
 
 	return req
 }
@@ -324,15 +397,16 @@ func (s *TestIntegrationSuite) newUsers(service *cluster.ClusterService, n int) 
 	return users
 }
 
-func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient) {
+func (s *TestIntegrationSuite) prepareService() (*cluster.ClusterService, *ibmcloudmock.MockIBMCloudClient, *MockConfig) {
 	mockClient := ibmcloudmock.NewMockIBMCloudClient()
+	mockConfig := &MockConfig{
+		config: s.Config,
+	}
 	service := &cluster.ClusterService{
 		IbmCloudClient: mockClient,
-		Config: &MockConfig{
-			config: s.Config,
-		},
+		Config:         mockConfig,
 	}
-	return service, mockClient
+	return service, mockClient, mockConfig
 }
 
 func (s *TestIntegrationSuite) provisionClusters(service *cluster.ClusterService, client *ibmcloudmock.MockIBMCloudClient, n, deleteIn int) (cluster.Request, cluster.RequestWithClusters) {
@@ -381,7 +455,8 @@ func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
 			c.Error == "" &&
 			c.Hostname == "" &&
 			c.MasterURL == "" &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			c.IBMClusterRequestID != "" &&
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -395,7 +470,7 @@ func clustersDeleted(req *cluster.RequestWithClusters) (bool, error) {
 		ok := c.Status == "deleted" &&
 			c.RequestID == req.ID &&
 			c.Error == "" &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -418,7 +493,22 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			c.IBMClusterRequestID != "" &&
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
+		if !ok {
+			fmt.Printf("Found clusters: %v\n", req.Clusters)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func clustersFailed(req *cluster.RequestWithClusters) (bool, error) {
+	for _, c := range req.Clusters {
+		ok := c.Status == "failed" &&
+			c.RequestID == req.ID &&
+			c.Error != "" &&
+			c.IBMClusterRequestID != ""
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -475,6 +565,11 @@ func waitForClustersToGetProvisioned(service *cluster.ClusterService, request cl
 	return waitForRequest(service, request, requestReady, clustersReady, usersAssigned)
 }
 
+func waitForClustersToFail(service *cluster.ClusterService, request cluster.Request) (cluster.RequestWithClusters, error) {
+	fmt.Println("Wait for clusters to fail")
+	return waitForRequest(service, request, clustersFailed)
+}
+
 func waitForRequest(service *cluster.ClusterService, request cluster.Request, criteria ...RequestCriterion) (cluster.RequestWithClusters, error) {
 	var req cluster.RequestWithClusters
 	err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
@@ -516,7 +611,8 @@ func waitForRequest(service *cluster.ClusterService, request cluster.Request, cr
 }
 
 type MockConfig struct {
-	config *configuration.Config
+	config  *configuration.Config
+	timeout int
 }
 
 func (c *MockConfig) GetIBMCloudAPIKey() string {
@@ -525,6 +621,13 @@ func (c *MockConfig) GetIBMCloudAPIKey() string {
 
 func (c *MockConfig) GetIBMCloudApiCallRetrySec() int {
 	return 1
+}
+
+func (c *MockConfig) GetIBMCloudApiCallTimeoutSec() int {
+	if c.timeout != 0 {
+		return c.timeout
+	}
+	return 100
 }
 
 func (c *MockConfig) GetIBMCloudAccountID() string {

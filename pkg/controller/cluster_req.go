@@ -95,6 +95,18 @@ func (r *ClusterRequest) GetHandlerClusterReq(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, req)
 }
 
+// GetHandlerClusters returns not deleted Cluster resources for the given zone
+func (r *ClusterRequest) GetHandlerClusters(ctx *gin.Context) {
+	zone := ctx.Param("zone")
+	clusters, err := cluster.DefaultClusterService.GetClusters(zone)
+	if err != nil {
+		log.Error(ctx, err, "error fetching clusters")
+		devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error fetching clusters")
+		return
+	}
+	ctx.JSON(http.StatusOK, clusters)
+}
+
 // GetHandlerZones returns Zones resource
 func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
 	zones, err := cluster.DefaultClusterService.GetZones()

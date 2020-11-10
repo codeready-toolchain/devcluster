@@ -46,12 +46,12 @@ export default function RequestForm({ zones, onSubmit }) {
                 label="Number of Clusters"
                 type="number"
                 InputProps={{
-                  inputProps: { min: 1, max: 250 },
+                  inputProps: { min: 1, max: 40 },
                 }}
                 InputLabelProps={{
                   shrink: true,
                 }}
-                onChange={(event) => event.target.value<1?setNumberOfClusters(1):event.target.value>250?setNumberOfClusters(250):setNumberOfClusters(event.target.value)}
+                onChange={(event) => event.target.value<1?setNumberOfClusters(1):event.target.value>40?setNumberOfClusters(40):setNumberOfClusters(event.target.value)}
             />
         </FormControl>
         <FormControl className={classes.formControl} style={{minWidth: '220px'}}>
