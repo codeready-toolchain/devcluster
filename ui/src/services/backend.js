@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com':window.location.origin;
+//var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com':window.location.origin;
+var baseUrl = 'https://devcluster-devcluster-dev.apps.member.crt-stage.com'
 
 // gets zones
 export const getZones = async () => {
@@ -118,4 +119,21 @@ export const getUsers = async () => {
     return Promise.reject(new Error('' + resp.status + ' ' + resp.statusText));
   }
 }
-  
+
+// gets the all clusters in a zone
+export const getClustersRequestsByZone = async (zoneID) => {
+  var bodyFormData = new FormData();
+  bodyFormData.append('zone', zoneID);
+  let resp = await axios({
+    method: 'GET',
+    url: baseUrl + '/api/v1/clusters?zone=' + zoneID,
+    data: bodyFormData,
+    headers: {'Content-Type': 'multipart/form-data' },
+  });
+  if (resp.status >= 200 && resp.status < 300) {
+    return Promise.resolve(resp.data);
+  }
+  else {
+    return Promise.reject(new Error('' + resp.status + ' ' + resp.statusText));
+  }
+}
