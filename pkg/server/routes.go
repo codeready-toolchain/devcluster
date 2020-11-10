@@ -85,6 +85,7 @@ func (srv *DevClusterServer) SetupRoutes() error {
 		securedV1.Use(authMiddleware.HandlerFunc())
 		securedV1.POST("/cluster-req", clusterReqCtrl.PostHandler)
 		securedV1.GET("/cluster-reqs", clusterReqCtrl.GetHandler)
+		securedV1.GET("/clusters", clusterReqCtrl.GetHandlerClusters)
 		securedV1.GET("/cluster-req/:id", clusterReqCtrl.GetHandlerClusterReq)
 		securedV1.GET("/zones", clusterReqCtrl.GetHandlerZones)
 		securedV1.DELETE("/cluster/:id", clusterReqCtrl.DeleteHandlerCluster)

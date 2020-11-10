@@ -109,15 +109,10 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 	}
 	clusters, err := getClusters(requestID)
 	for i, _ := range clusters {
-		user, err := GetUserByClusterID(clusters[i].ID)
+		clusters[i], err = s.enrichCluster(clusters[i])
 		if err != nil {
-			if devclustererr.IsNotFound(err) {
-				continue // Ignore not found users
-			}
 			return nil, err
 		}
-		clusters[i].User = *user
-		clusters[i] = s.withURLs(clusters[i])
 	}
 	if err != nil {
 		return nil, err
@@ -126,6 +121,19 @@ func (s *ClusterService) GetRequestWithClusters(requestID string) (*RequestWithC
 		Request:  *request,
 		Clusters: clusters,
 	}, nil
+}
+
+func (s *ClusterService) enrichCluster(c Cluster) (Cluster, error) {
+	user, err := GetUserByClusterID(c.ID)
+	if err != nil {
+		if devclustererr.IsNotFound(err) {
+			return c, nil // Ignore not found users
+		}
+		return c, err
+	}
+	c.User = *user
+	c = s.withURLs(c)
+	return c, nil
 }
 
 func (s *ClusterService) withURLs(c Cluster) Cluster {
@@ -166,6 +174,21 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 	}
 
 	return r, nil
+}
+
+// GetClusters returns an array of the clusters with status not equal to "deleted" for the given zone.
+func (s *ClusterService) GetClusters(zone string) ([]Cluster, error) {
+	clusters, err := getClustersWithRequestFilter(withZone(zone), withNotDeletedStatus())
+	if err != nil {
+		return nil, err
+	}
+	for i, c := range clusters {
+		clusters[i], err = s.enrichCluster(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return clusters, nil
 }
 
 // DeleteCluster deletes the cluster with the given ID

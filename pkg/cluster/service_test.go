@@ -115,6 +115,51 @@ func (s *TestIntegrationSuite) TestRequestClusters() {
 	})
 }
 
+func (s *TestIntegrationSuite) TestGetClusters() {
+	service, mockClient, _ := s.prepareService()
+	s.newUsers(service, 20)
+
+	prepareProvisionedClusters := func(zone string) []cluster.Cluster {
+		req := s.newRequestWithZone(service, 3, 10000, zone)
+		_, err := waitForClustersToStartProvisioning(service, req)
+		require.NoError(s.T(), err)
+		s.markClustersAsProvisioned(service, mockClient, req)
+		r, err := waitForClustersToGetProvisioned(service, req)
+		require.NoError(s.T(), err)
+		return r.Clusters
+	}
+	expectedClusters := make([]cluster.Cluster, 0, 0)
+
+	// Create a few requests.
+	// One in wdc02 is provisioned.
+	expectedClusters = append(expectedClusters, prepareProvisionedClusters("wdc02")...)
+	// One more in wdc02 is also provisioned
+	expectedClusters = append(expectedClusters, prepareProvisionedClusters("wdc02")...)
+	// One more in wdc02 is deleted
+	toDelete := prepareProvisionedClusters("wdc02")
+	for _, c := range toDelete {
+		err := service.DeleteCluster(c.ID)
+		require.NoError(s.T(), err)
+	}
+	// One more in wdc02 is still provisioning
+	wdc02Provisioning := s.newRequestWithZone(service, 5, 100, "wdc02")
+	withClusters, err := waitForClustersToStartProvisioning(service, wdc02Provisioning)
+	require.NoError(s.T(), err)
+	expectedClusters = append(expectedClusters, withClusters.Clusters...)
+	require.NoError(s.T(), err)
+	// And one provisioned in a different zone: fra02
+	prepareProvisionedClusters("fra02")
+
+	// Verify that GetClusters() for wdc02 returns expected not deleted clusters
+	actualClusters, err := service.GetClusters("wdc02")
+	require.NoError(s.T(), err)
+	assert.Len(s.T(), actualClusters, 11)
+	assert.Len(s.T(), actualClusters, len(expectedClusters))
+	for _, c := range expectedClusters {
+		require.Contains(s.T(), actualClusters, c)
+	}
+}
+
 func (s *TestIntegrationSuite) TestGetZones() {
 	service, _, _ := s.prepareService()
 	s.Run("get zones OK", func() {
@@ -332,12 +377,16 @@ func (s *TestIntegrationSuite) TestUsers() {
 }
 
 func (s *TestIntegrationSuite) newRequest(service *cluster.ClusterService, n int, deleteIn int) cluster.Request {
-	req, err := service.CreateNewRequest("johnsmith@domain.com", n, "lon06", deleteIn, false)
+	return s.newRequestWithZone(service, n, deleteIn, "lon06")
+}
+
+func (s *TestIntegrationSuite) newRequestWithZone(service *cluster.ClusterService, n int, deleteIn int, zone string) cluster.Request {
+	req, err := service.CreateNewRequest("johnsmith@domain.com", n, zone, deleteIn, false)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "johnsmith@domain.com", req.RequestedBy)
 	assert.Equal(s.T(), n, req.Requested)
 	assert.Equal(s.T(), "provisioning", req.Status)
-	assert.Equal(s.T(), "lon06", req.Zone)
+	assert.Equal(s.T(), zone, req.Zone)
 
 	return req
 }
@@ -407,7 +456,7 @@ func clustersDeploying(req *cluster.RequestWithClusters) (bool, error) {
 			c.Hostname == "" &&
 			c.MasterURL == "" &&
 			c.IBMClusterRequestID != "" &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -421,7 +470,7 @@ func clustersDeleted(req *cluster.RequestWithClusters) (bool, error) {
 		ok := c.Status == "deleted" &&
 			c.RequestID == req.ID &&
 			c.Error == "" &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil
@@ -445,7 +494,7 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
 			c.IBMClusterRequestID != "" &&
-			strings.Contains(c.Name, "rhd-lon06-")
+			strings.Contains(c.Name, fmt.Sprintf("rhd-%s-", req.Zone))
 		if !ok {
 			fmt.Printf("Found clusters: %v\n", req.Clusters)
 			return false, nil

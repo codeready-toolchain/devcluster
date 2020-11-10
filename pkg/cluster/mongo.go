@@ -40,18 +40,23 @@ func getRequest(id string) (*Request, error) {
 }
 
 func getAllRequests() ([]Request, error) {
-	return getRequests(bson.D{})
+	return getRequestsWithFilter()
 }
 
 func getRequestsWithStatus(status string) ([]Request, error) {
-	return getRequests(bson.D{
-		{"status", status},
-	})
+	return getRequestsWithFilter(withStatus(status))
 }
 
-func getRequests(d bson.D) ([]Request, error) {
+func getRequestsWithFilter(filters ...bson.E) ([]Request, error) {
 	requests := make([]Request, 0, 0)
-	cursor, err := mongodb.ClusterRequests().Find(context.Background(), d)
+	p := bson.D{}
+	for _, f := range filters {
+		p = append(p, f)
+	}
+	cursor, err := mongodb.ClusterRequests().Find(
+		context.Background(),
+		p,
+	)
 	if err != nil {
 		return requests, errors.Wrap(err, "unable to load cluster requests from mongo")
 	}
@@ -166,11 +171,43 @@ func getClusterByName(name string) (*Cluster, error) {
 	return &c, nil
 }
 
+func withRequestID(requestID string) bson.E {
+	return bson.E{Key: "request_id", Value: requestID}
+}
+
+func withNormalStatus() bson.E {
+	return withStatus(StatusNormal)
+}
+
+func withNotDeletedStatus() bson.E {
+	return withStatusNotEqualTo(StatusDeleted)
+}
+
+func withStatus(status string) bson.E {
+	return bson.E{Key: "status", Value: status}
+}
+
+func withStatusNotEqualTo(status string) bson.E {
+	return bson.E{Key: "status", Value: bson.M{"$ne": status}}
+}
+
+func withZone(zone string) bson.E {
+	return bson.E{Key: "zone", Value: zone}
+}
+
 func getClusters(requestID string) ([]Cluster, error) {
+	return getClustersWithFilter(withRequestID(requestID))
+}
+
+func getClustersWithFilter(filters ...bson.E) ([]Cluster, error) {
 	clusters := make([]Cluster, 0, 0)
+	p := bson.D{}
+	for _, f := range filters {
+		p = append(p, f)
+	}
 	cursor, err := mongodb.Clusters().Find(
 		context.Background(),
-		bson.D{{"request_id", requestID}},
+		p,
 	)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -186,6 +223,22 @@ func getClusters(requestID string) ([]Cluster, error) {
 		clusters = append(clusters, convertBSONToCluster(m))
 	}
 	return clusters, err
+}
+
+func getClustersWithRequestFilter(requestFilter bson.E, clusterFilters ...bson.E) ([]Cluster, error) {
+	clusters := make([]Cluster, 0, 0)
+	requests, err := getRequestsWithFilter(requestFilter)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range requests {
+		cl, err := getClustersWithFilter(append(clusterFilters, withRequestID(r.ID))...)
+		if err != nil {
+			return nil, err
+		}
+		clusters = append(clusters, cl...)
+	}
+	return clusters, nil
 }
 
 // getUserWithoutCluster returns the first found user with no cluster_id set and with the earliest "recycled" timestamp
