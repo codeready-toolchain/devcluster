@@ -12,6 +12,7 @@ import Tabs from '@material-ui/core/Tabs';
 
 import ClustersPanel from './clusterspanel';
 import UsersPanel from './userspanel';
+import ZonesPanel from './zonespanel';
 
 import logo from './redhat-logo.svg';
 import rhdlogo from './rhdeveloper-logo.svg';
@@ -196,11 +197,13 @@ export default function App() {
             <Tabs aria-label="main-tabs" value={activeTab} onChange={handleChange} >
               <Tab label="Clusters" value="tab-clusters" />
               <Tab label="Users" value="tab-users" />
+              <Tab label="Zones" value="tab-zones" />
             </Tabs>
           </AppBar>
         } 
         {authenticated && activeTab === 'tab-clusters' ? <div className={classes.tabPanel}><ClustersPanel key="tab-clusters" /></div> : null}
         {authenticated && activeTab === 'tab-users' ? <div className={classes.tabPanelCentered}><UsersPanel key="tab-users" /></div> : null}
+        {authenticated && activeTab === 'tab-zones' ? <div className={classes.tabPanelCentered}><ZonesPanel key="tab-zones" /></div> : null}
       </div>
   );
 }
