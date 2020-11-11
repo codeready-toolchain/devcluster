@@ -22,7 +22,6 @@ func (s *TestClusterReqSuite) TestFilterZones() {
 	r := &ClusterRequest{}
 	expectedZones := []ibmcloud.Location{
 		dc("wdc04"), dc("wdc06"), dc("wdc07"),
-		dc("dal10"), dc("dal12"), dc("dal13"),
 		dc("che01"),
 		dc("fra02"), dc("fra04"), dc("fra05"),
 		dc("ams03"),

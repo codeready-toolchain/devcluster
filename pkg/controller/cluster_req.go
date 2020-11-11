@@ -118,7 +118,7 @@ func (r *ClusterRequest) GetHandlerZones(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, r.filterZones(ctx, zones))
 }
 
-var allowedDCs = map[string]bool{"wdc04": true, "wdc06": true, "wdc07": true, "dal10": true, "dal12": true, "dal13": true, "che01": true, "fra02": true, "fra04": true, "fra05": true, "ams03": true}
+var allowedDCs = map[string]bool{"wdc04": true, "wdc06": true, "wdc07": true, "che01": true, "fra02": true, "fra04": true, "fra05": true, "ams03": true}
 
 // filterZones returns the filtered array of the zones/DCs allowed to be used by the client
 func (r *ClusterRequest) filterZones(ctx *gin.Context, zones []ibmcloud.Location) []ibmcloud.Location {
