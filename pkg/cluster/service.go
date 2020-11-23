@@ -166,12 +166,15 @@ func (s *ClusterService) CreateNewRequest(requestedBy string, n int, zone string
 	if err != nil {
 		return Request{}, errors.Wrap(err, "unable to start new request")
 	}
-	for i := 0; i < r.Requested; i++ {
-		err := s.provisionNewCluster(r)
-		if err != nil {
-			log.Error(nil, err, "unable to provision a cluster")
+
+	go func() {
+		for i := 0; i < r.Requested; i++ {
+			err := s.provisionNewCluster(r)
+			if err != nil {
+				log.Error(nil, err, "unable to provision a cluster")
+			}
 		}
-	}
+	}()
 
 	return r, nil
 }
