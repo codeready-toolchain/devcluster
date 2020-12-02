@@ -8,7 +8,7 @@ This is the DevCluster Service repository
 
 == Build
 
-Requires Go version 1.14 - download for your development environment https://golang.org/dl/[here].
+Requires Go (version 1.14 or higher) - download for your development environment https://golang.org/dl/[here].
 
 This repository uses https://github.com/golang/go/wiki/Modules[Go modules]
 
