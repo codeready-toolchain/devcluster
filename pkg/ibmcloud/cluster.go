@@ -202,7 +202,7 @@ const ClusterConfigTemplate = `
   "dataCenter": "%s",
   "disableAutoUpdate": true,
   "machineType": "b3c.4x16",
-  "masterVersion": "4.5_openshift",
+  "masterVersion": "4.6_openshift",
   "name": "%s",
   "publicVlan": "%s",
   "privateVlan": "%s",
