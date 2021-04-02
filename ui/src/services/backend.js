@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-//var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.member.crt-stage.com':window.location.origin;
-var baseUrl = 'https://devcluster-devcluster-dev.apps.member.crt-stage.com'
+var baseUrl = window.location.origin.startsWith('http://localhost')?'https://devcluster-alexeykazakov-stage.apps.sandbox-stage.gb17.p1.openshiftapps.com':window.location.origin;
+//var baseUrl = 'https://devcluster-devcluster-dev.apps.sandbox-stage.gb17.p1.openshiftapps.com'
 
 // gets zones
 export const getZones = async () => {
