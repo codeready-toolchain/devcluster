@@ -211,6 +211,11 @@ func (s *ClusterService) DeleteCluster(id string) error {
 	return replaceCluster(*c)
 }
 
+// GetCluster returns the cluster with the given ID
+func (s *ClusterService) GetCluster(id string) (*Cluster, error) {
+	return getCluster(id)
+}
+
 // ResumeProvisioningRequests load requests that are still provisioning and wait for their clusters to be ready to update the status
 func (s *ClusterService) ResumeProvisioningRequests() error {
 	requests, err := getRequestsWithStatus(StatusProvisioning)

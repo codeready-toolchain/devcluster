@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/codeready-toolchain/devcluster/pkg/cluster"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
@@ -144,6 +145,35 @@ func (r *ClusterRequest) DeleteHandlerCluster(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusNoContent, nil)
+}
+
+// DeleteHandlerClusters deletes Cluster resources with the given IDs
+func (r *ClusterRequest) DeleteHandlerClusters(ctx *gin.Context) {
+	ids := strings.Split(ctx.Param("ids"), ",")
+	// Check that all provided cluster IDs are known
+	for _, id := range ids {
+		cls, err := cluster.DefaultClusterService.GetCluster(id)
+		if err != nil {
+			log.Error(ctx, err, fmt.Sprintf("error deleting cluster with id=%s", id))
+			devclustererrors.AbortWithError(ctx, http.StatusInternalServerError, err, "error deleting clusters")
+			return
+		}
+		if cls == nil {
+			err = errors.New(fmt.Sprintf("unknown cluster ID: %s", id))
+			log.Error(ctx, err, fmt.Sprintf("error deleting cluster with id=%s", id))
+			devclustererrors.AbortWithError(ctx, http.StatusBadRequest, err, "error deleting clusters: unknown cluster ID")
+			return
+		}
+	}
+	// Start deleting the clusters but do not wait and return 202
+	go func() {
+		for _, id := range ids {
+			if err := cluster.DefaultClusterService.DeleteCluster(id); err != nil {
+				log.Error(ctx, err, fmt.Sprintf("error deleting cluster with id=%s", id))
+			}
+		}
+	}()
+	ctx.JSON(http.StatusAccepted, nil)
 }
 
 // PostUsersHandler creates N number of users and returns them as an array (JSON)

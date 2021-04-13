@@ -89,6 +89,7 @@ func (srv *DevClusterServer) SetupRoutes() error {
 		securedV1.GET("/cluster-req/:id", clusterReqCtrl.GetHandlerClusterReq)
 		securedV1.GET("/zones", clusterReqCtrl.GetHandlerZones)
 		securedV1.DELETE("/cluster/:id", clusterReqCtrl.DeleteHandlerCluster)
+		securedV1.DELETE("/clusters", clusterReqCtrl.DeleteHandlerClusters) // DELETE /clusters?ids=<id1>,<id2>,<id3>...
 		securedV1.POST("/users", clusterReqCtrl.PostUsersHandler)
 		securedV1.GET("/users", clusterReqCtrl.GetUsersHandler)
 
