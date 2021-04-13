@@ -204,6 +204,36 @@ func (s *TestIntegrationSuite) TestDeleteCluster() {
 	})
 }
 
+func (s *TestIntegrationSuite) TestGetCluster() {
+	service, cl, _ := s.prepareService()
+	s.newUsers(service, 10)
+	s.Run("get cluster OK", func() {
+		// Provision some clusters
+		req, reqWithClusters := s.provisionClusters(service, cl, 3, 100)
+
+		// Now get them one by one
+		for _, cls := range reqWithClusters.Clusters {
+			obtainedCluster, err := service.GetCluster(cls.ID)
+			require.NoError(s.T(), err)
+			require.NotNil(s.T(), obtainedCluster)
+			assertClusterEquals(s.T(), cluster.Cluster{
+				ID:        cls.ID,
+				RequestID: req.ID,
+				Name:      cls.Name,
+				Hostname:  cls.Hostname,
+				MasterURL: cls.MasterURL,
+				Status:    "normal",
+				Error:     "",
+			}, *obtainedCluster)
+		}
+	})
+	s.Run("get cluster not found", func() {
+		obtainedCluster, err := service.GetCluster("unknown")
+		require.NoError(s.T(), err)
+		require.Nil(s.T(), obtainedCluster)
+	})
+}
+
 func assertClusterEquals(t assert.TestingT, expected, actual cluster.Cluster) {
 	assert.Equal(t, expected.ID, actual.ID)
 	assert.Equal(t, expected.RequestID, actual.RequestID)
