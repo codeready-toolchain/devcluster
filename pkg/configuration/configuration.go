@@ -100,7 +100,7 @@ const (
 	varIBMCloudApiCallRetrySec      = "ibmcloud.api_call_retry_sec"
 	DefaultBMCloudApiCallRetrySec   = 30
 	varIBMCloudApiCallTimeoutSec    = "ibmcloud.api_call_timeout_sec"
-	DefaultBMCloudApiCallTimeoutSec = 5 * 60 * 60 // 5 hours
+	DefaultBMCloudApiCallTimeoutSec = 24 * 60 * 60 // 24 hours
 
 	// Tenant cluster authN
 	varIBMCloudAccountID   = "ibmcloud.account_id"
