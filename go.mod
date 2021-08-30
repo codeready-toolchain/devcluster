@@ -12,13 +12,13 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/matryer/resync v0.0.0-20161211202428-d39c09a11215
-	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
+	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546 // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/stretchr/testify v1.5.1
-	go.mongodb.org/mongo-driver v1.1.2
+	github.com/stretchr/testify v1.6.1
+	go.mongodb.org/mongo-driver v1.7.1
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.1
 	k8s.io/apimachinery v0.18.3

@@ -27,7 +27,7 @@ type mongoClient struct {
 }
 
 func InitDefaultClient(config Config) (func(), error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	opts := []*options.ClientOptions{
 		options.Client().ApplyURI(config.GetMongodbConnectionString()),
@@ -42,8 +42,6 @@ func InitDefaultClient(config Config) (func(), error) {
 			InsecureSkipVerify: true,
 		}))
 	}
-	//log.Info(nil, fmt.Sprintf("MongoDB connection string: %s", config.GetMongodbConnectionString()))
-	//log.Info(nil, fmt.Sprintf("MongoDB ca: %s", config.GetMongodbCA()))
 	c, err := mongo.Connect(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -53,9 +51,7 @@ func InitDefaultClient(config Config) (func(), error) {
 		config: config,
 	}
 	if err := c.Ping(ctx, nil); err != nil {
-		return func() {
-			time.Sleep(10 * time.Second)
-		}, errs.Wrap(err, "Can't connect to MongoDB")
+		return func() {}, errs.Wrap(err, "Can't connect to MongoDB")
 	}
 	return func() {
 		if err = c.Disconnect(ctx); err != nil {
