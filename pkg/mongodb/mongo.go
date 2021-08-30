@@ -7,6 +7,8 @@ import (
 	"errors"
 	"time"
 
+	errs "github.com/pkg/errors"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -33,10 +35,15 @@ func InitDefaultClient(config Config) (func(), error) {
 	if ca := config.GetMongodbCA(); ca != "" {
 		roots := x509.NewCertPool()
 		if ok := roots.AppendCertsFromPEM([]byte(ca)); !ok {
-			return nil, errors.New("failed to parse the mongodb CA")
+			return func() {}, errors.New("failed to parse the mongodb CA")
 		}
-		opts = append(opts, options.Client().SetTLSConfig(&tls.Config{RootCAs: roots}))
+		opts = append(opts, options.Client().SetTLSConfig(&tls.Config{
+			RootCAs:            roots,
+			InsecureSkipVerify: true,
+		}))
 	}
+	//log.Info(nil, fmt.Sprintf("MongoDB connection string: %s", config.GetMongodbConnectionString()))
+	//log.Info(nil, fmt.Sprintf("MongoDB ca: %s", config.GetMongodbCA()))
 	c, err := mongo.Connect(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -44,6 +51,11 @@ func InitDefaultClient(config Config) (func(), error) {
 	defaultClient = &mongoClient{
 		client: c,
 		config: config,
+	}
+	if err := c.Ping(ctx, nil); err != nil {
+		return func() {
+			time.Sleep(10 * time.Second)
+		}, errs.Wrap(err, "Can't connect to MongoDB")
 	}
 	return func() {
 		if err = c.Disconnect(ctx); err != nil {
