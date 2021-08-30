@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/pkg/middleware"
 	"github.com/codeready-toolchain/devcluster/pkg/server"
@@ -15,7 +17,6 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/status"
 	authsupport "github.com/codeready-toolchain/toolchain-common/pkg/test/auth"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -41,29 +42,37 @@ func (s *TestAuthMiddlewareSuite) TestAuthMiddleware() {
 func (s *TestAuthMiddlewareSuite) TestAuthMiddlewareService() {
 	// create a TokenGenerator and a key
 	tokengenerator := authsupport.NewTokenManager()
-	kid0 := uuid.NewV4().String()
-	_, err := tokengenerator.AddPrivateKey(kid0)
+	kid0, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	_, err = tokengenerator.AddPrivateKey(kid0.String())
 	require.NoError(s.T(), err)
 
 	// create some test tokens
+	id, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	username, err := uuid.NewV4()
+	require.NoError(s.T(), err)
 	identity0 := authsupport.Identity{
-		ID:       uuid.NewV4(),
-		Username: uuid.NewV4().String(),
+		ID:       id,
+		Username: username.String(),
 	}
-	emailClaim0 := authsupport.WithEmailClaim(uuid.NewV4().String() + "@email.tld")
+	email, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	emailClaim0 := authsupport.WithEmailClaim(email.String() + "@email.tld")
 	// valid token
-	tokenValid, err := tokengenerator.GenerateSignedToken(identity0, kid0, emailClaim0)
+	tokenValid, err := tokengenerator.GenerateSignedToken(identity0, kid0.String(), emailClaim0)
 	require.NoError(s.T(), err)
 	// invalid token - no email
-	tokenInvalidNoEmail, err := tokengenerator.GenerateSignedToken(identity0, kid0)
+	tokenInvalidNoEmail, err := tokengenerator.GenerateSignedToken(identity0, kid0.String())
 	require.NoError(s.T(), err)
 	// invalid token - garbage
-	tokenInvalidGarbage := uuid.NewV4().String()
+	tokenInvalidGarbage, err := uuid.NewV4()
+	require.NoError(s.T(), err)
 	// invalid token - expired
 	expTime := time.Now().Add(-60 * time.Second)
 	expClaim := authsupport.WithExpClaim(expTime)
-	tokenInvalidExpiredJWT := tokengenerator.GenerateToken(identity0, kid0, emailClaim0, expClaim)
-	tokenInvalidExpired, err := tokengenerator.SignToken(tokenInvalidExpiredJWT, kid0)
+	tokenInvalidExpiredJWT := tokengenerator.GenerateToken(identity0, kid0.String(), emailClaim0, expClaim)
+	tokenInvalidExpired, err := tokengenerator.SignToken(tokenInvalidExpiredJWT, kid0.String())
 	require.NoError(s.T(), err)
 
 	// start key service
@@ -134,7 +143,7 @@ func (s *TestAuthMiddlewareSuite) TestAuthMiddlewareService() {
 			{"auth_test, valid header auth", "/api/v1/auth_test", http.MethodGet, "Bearer " + tokenValid, http.StatusOK},
 			{"auth_test, invalid header auth, no email claim", "/api/v1/auth_test", http.MethodGet, "Bearer " + tokenInvalidNoEmail, http.StatusUnauthorized},
 			{"auth_test, invalid header auth, expired", "/api/v1/auth_test", http.MethodGet, "Bearer " + tokenInvalidExpired, http.StatusUnauthorized},
-			{"auth_test, invalid header auth, token garbage", "/api/v1/auth_test", http.MethodGet, "Bearer " + tokenInvalidGarbage, http.StatusUnauthorized},
+			{"auth_test, invalid header auth, token garbage", "/api/v1/auth_test", http.MethodGet, "Bearer " + tokenInvalidGarbage.String(), http.StatusUnauthorized},
 			{"auth_test, invalid header auth, wrong header format", "/api/v1/auth_test", http.MethodGet, tokenValid, http.StatusUnauthorized},
 			{"auth_test, invalid header auth, bearer but no token", "/api/v1/auth_test", http.MethodGet, "Bearer ", http.StatusUnauthorized},
 		}
