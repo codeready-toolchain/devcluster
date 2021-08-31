@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/codeready-toolchain/devcluster/pkg/log"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 /****************************************************

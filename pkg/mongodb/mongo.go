@@ -7,6 +7,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/codeready-toolchain/devcluster/pkg/log"
+
 	errs "github.com/pkg/errors"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,9 +40,11 @@ func InitDefaultClient(config Config) (func(), error) {
 			return func() {}, errors.New("failed to parse the mongodb CA")
 		}
 		opts = append(opts, options.Client().SetTLSConfig(&tls.Config{
-			RootCAs:            roots,
-			InsecureSkipVerify: true,
+			RootCAs: roots,
+			//InsecureSkipVerify: true,
 		}))
+	} else {
+		log.Info(nil, "TLS certificate for MongoDB connection is not set")
 	}
 	c, err := mongo.Connect(ctx, opts...)
 	if err != nil {
@@ -51,7 +55,7 @@ func InitDefaultClient(config Config) (func(), error) {
 		config: config,
 	}
 	if err := c.Ping(ctx, nil); err != nil {
-		return func() {}, errs.Wrap(err, "Can't connect to MongoDB")
+		return func() {}, errs.Wrap(err, "unable to connect to MongoDB")
 	}
 	return func() {
 		if err = c.Disconnect(ctx); err != nil {
