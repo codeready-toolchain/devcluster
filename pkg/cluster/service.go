@@ -143,7 +143,7 @@ func (s *ClusterService) withURLs(c Cluster) Cluster {
 	c.LoginURL = fmt.Sprintf("https://iam.cloud.ibm.com/identity/devcluster/authorize?client_id=HOP55v1CCT&response_type=code&state=%s&redirect_uri=%s", dashboard, redirect)
 	encodedLoginURL := url.QueryEscape(c.LoginURL)
 	if c.Hostname != "" && c.User.ID != "" {
-		c.WorkshopURL = fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/4.6/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL)
+		c.WorkshopURL = fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/4.7/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s&PROJECT=workshop", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL)
 		c.ConsoleURL = fmt.Sprintf("https://console-openshift-console.%s", c.Hostname)
 	}
 	return c
