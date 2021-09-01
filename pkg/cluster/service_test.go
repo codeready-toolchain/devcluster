@@ -520,7 +520,7 @@ func clustersReady(req *cluster.RequestWithClusters) (bool, error) {
 			c.Hostname == fmt.Sprintf("prefix-%s", c.Name) &&
 			c.ConsoleURL == fmt.Sprintf("https://console-openshift-console.prefix-%s", c.Name) &&
 			c.LoginURL == fmt.Sprintf("https://iam.cloud.ibm.com/identity/devcluster/authorize?client_id=HOP55v1CCT&response_type=code&state=%s&redirect_uri=%s", dashboard, redirect) &&
-			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/4.6/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
+			c.WorkshopURL == fmt.Sprintf("https://redhat-scholars.github.io/openshift-starter-guides/rhs-openshift-starter-guides/4.7/index.html?CLUSTER_SUBDOMAIN=%s&USERNAME=%s&PASSWORD=%s&LOGIN=%s&PROJECT=workshop", c.Hostname, c.User.ID, c.User.Password, encodedLoginURL) &&
 			c.IdentityProviderURL == "https://cloud.ibm.com/authorize/devcluster" &&
 			c.MasterURL == fmt.Sprintf("https://%s:100", c.Name) &&
 			c.IBMClusterRequestID != "" &&
