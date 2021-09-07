@@ -126,7 +126,7 @@ export default function App() {
     const loadKeycloakClient = (callback) => {
       let url;
       if (window.location.origin.startsWith('http://localhost')) {
-        url = 'https://sso.prod-preview.openshift.io/auth/js/keycloak.js';
+        url = 'https://sso.devsandbox.dev/auth/js/keycloak.js';
         attachClientElem(url, callback);
       } else {
         fetch(window.location.origin + '/api/v1/authconfig')

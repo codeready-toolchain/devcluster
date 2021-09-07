@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -166,7 +167,7 @@ func (km *KeyManager) fetchKeys(keysEndpointURL string) ([]*PublicKey, error) {
 	bodyString := buf.String()
 	// if status code was not OK, bail out
 	if res.StatusCode != http.StatusOK {
-		err := errors.New("unable to obtain public keys from remote service")
+		err := errors.New(fmt.Sprintf("unable to obtain public keys from remote service from %s", keysEndpointURL))
 		log.WithValues(map[string]interface{}{
 			"response_status": res.Status,
 			"response_body":   bodyString,

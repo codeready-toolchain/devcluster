@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/codeready-toolchain/devcluster/test/fake"
+
 	"github.com/codeready-toolchain/devcluster/pkg/auth"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/test"
@@ -117,7 +119,7 @@ func (s *TestKeyManagerSuite) TestKeyFetching() {
 		// Create KeyManager instance.
 		_, err = auth.NewKeyManager(s.Config)
 		// this needs to fail with an error
-		assert.EqualError(s.T(), err, "unable to obtain public keys from remote service")
+		assert.EqualError(s.T(), err, fmt.Sprintf("unable to obtain public keys from remote service from %s", ts.URL))
 	})
 
 	s.Run("parse keys, invalid response", func() {
@@ -261,6 +263,7 @@ func (s *TestKeyManagerSuite) TestE2EKeyFetching() {
 	s.Run("fail to retrieve e2e keys for prod environment", func() {
 		resetFunc := commontest.SetEnvVarAndRestore(s.T(), key, "prod")
 		defer resetFunc()
+		fake.MockSSOCertsCall(s.T())
 		config := configuration.New()
 
 		checkE2EKeysNotFound(config)
@@ -269,6 +272,7 @@ func (s *TestKeyManagerSuite) TestE2EKeyFetching() {
 	s.Run("fail to retrieve e2e keys if environment is not set", func() {
 		resetFunc := commontest.UnsetEnvVarAndRestore(s.T(), key)
 		defer resetFunc()
+		fake.MockSSOCertsCall(s.T())
 		config := configuration.New()
 
 		checkE2EKeysNotFound(config)
