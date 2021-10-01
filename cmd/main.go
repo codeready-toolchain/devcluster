@@ -19,21 +19,27 @@ func main() {
 	// create logger and registry
 	log.Init("devcluster-service")
 
+	log.Info(nil, "Starting DevCluster service...")
 	config := configuration.New()
+	log.Info(nil, "Initiating MongoDB client...")
 	disconnect, err := mongodb.InitDefaultClient(config)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer disconnect()
 
+	log.Info(nil, "Initiating IBMCloud client...")
 	cluster.InitDefaultClusterService(config)
+	log.Info(nil, "Starting deleting expired clusters routine...")
 	cluster.DefaultClusterService.StartDeletingExpiredClusters(600) // Re-check every 10 minutes
 	// If there are still provisioning requests left from previous sessions then resume them
+	log.Info(nil, "Resuming provisioning requests if any...")
 	err = cluster.DefaultClusterService.ResumeProvisioningRequests()
 	if err != nil {
 		panic(err.Error())
 	}
 
+	log.Info(nil, "Starting the server...")
 	srv := server.New(config)
 
 	err = srv.SetupRoutes()
@@ -57,6 +63,8 @@ func main() {
 }
 
 func gracefulShutdown(hs *http.Server, timeout time.Duration) {
+	log.Info(nil, "Shutting down...")
+
 	// For a channel used for notification of just one signal value, a buffer of
 	// size 1 is sufficient.
 	stop := make(chan os.Signal, 1)

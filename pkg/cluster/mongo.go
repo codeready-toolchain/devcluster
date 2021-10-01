@@ -58,10 +58,12 @@ func getRequestsWithFilter(filters ...bson.E) ([]Request, error) {
 		p,
 	)
 	if err != nil {
+		log.Error(nil, err, "something wrong")
 		return requests, errors.Wrap(err, "unable to load cluster requests from mongo")
 	}
 	var rqs []bson.M
 	if err = cursor.All(context.Background(), &rqs); err != nil {
+		log.Error(nil, err, "something wrong")
 		return requests, errors.Wrap(err, "unable to load cluster requests from mongo")
 	}
 	for _, m := range rqs {

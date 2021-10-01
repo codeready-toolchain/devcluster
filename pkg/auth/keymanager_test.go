@@ -6,14 +6,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/codeready-toolchain/devcluster/test/fake"
+
 	"github.com/codeready-toolchain/devcluster/pkg/auth"
 	"github.com/codeready-toolchain/devcluster/pkg/configuration"
 	"github.com/codeready-toolchain/devcluster/test"
 	commontest "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	authsupport "github.com/codeready-toolchain/toolchain-common/pkg/test/auth"
 
-	"github.com/dgrijalva/jwt-go"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -41,29 +43,37 @@ func (s *TestKeyManagerSuite) TestKeyManager() {
 func (s *TestKeyManagerSuite) TestKeyFetching() {
 	// create test keys
 	tokengenerator := authsupport.NewTokenManager()
-	kid0 := uuid.NewV4().String()
-	_, err := tokengenerator.AddPrivateKey(kid0)
+	kid0, err := uuid.NewV4()
 	require.NoError(s.T(), err)
-	kid1 := uuid.NewV4().String()
-	_, err = tokengenerator.AddPrivateKey(kid1)
+	_, err = tokengenerator.AddPrivateKey(kid0.String())
+	require.NoError(s.T(), err)
+	kid1, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	_, err = tokengenerator.AddPrivateKey(kid1.String())
 	require.NoError(s.T(), err)
 
 	// create two test tokens, both valid
-	username0 := uuid.NewV4().String()
+	username0, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	id, err := uuid.NewV4()
+	require.NoError(s.T(), err)
 	identity0 := &authsupport.Identity{
-		ID:       uuid.NewV4(),
-		Username: username0,
+		ID:       id,
+		Username: username0.String(),
 	}
 	email0 := identity0.Username + "@email.tld"
-	jwt0, err := tokengenerator.GenerateSignedToken(*identity0, kid0, authsupport.WithEmailClaim(email0))
+	jwt0, err := tokengenerator.GenerateSignedToken(*identity0, kid0.String(), authsupport.WithEmailClaim(email0))
 	require.NoError(s.T(), err)
-	username1 := uuid.NewV4().String()
+	username1, err := uuid.NewV4()
+	require.NoError(s.T(), err)
+	id, err = uuid.NewV4()
+	require.NoError(s.T(), err)
 	identity1 := &authsupport.Identity{
-		ID:       uuid.NewV4(),
-		Username: username1,
+		ID:       id,
+		Username: username1.String(),
 	}
 	email1 := identity1.Username + "@email.tld"
-	jwt1, err := tokengenerator.GenerateSignedToken(*identity1, kid1, authsupport.WithEmailClaim(email1))
+	jwt1, err := tokengenerator.GenerateSignedToken(*identity1, kid1.String(), authsupport.WithEmailClaim(email1))
 	require.NoError(s.T(), err)
 
 	// startup public key service
@@ -82,9 +92,9 @@ func (s *TestKeyManagerSuite) TestKeyFetching() {
 		require.NoError(s.T(), err)
 
 		// check if the keys are parsed correctly
-		_, err = keyManager.Key(kid0)
+		_, err = keyManager.Key(kid0.String())
 		require.NoError(s.T(), err)
-		_, err = keyManager.Key(kid1)
+		_, err = keyManager.Key(kid1.String())
 		require.NoError(s.T(), err)
 	})
 
@@ -109,7 +119,7 @@ func (s *TestKeyManagerSuite) TestKeyFetching() {
 		// Create KeyManager instance.
 		_, err = auth.NewKeyManager(s.Config)
 		// this needs to fail with an error
-		assert.EqualError(s.T(), err, "unable to obtain public keys from remote service")
+		assert.EqualError(s.T(), err, fmt.Sprintf("unable to obtain public keys from remote service from %s", ts.URL))
 	})
 
 	s.Run("parse keys, invalid response", func() {
@@ -173,8 +183,8 @@ func (s *TestKeyManagerSuite) TestKeyFetching() {
 			jwt  string
 			kid  string
 		}{
-			{"valid JWT 0", jwt0, kid0},
-			{"valid JWT 1", jwt1, kid1},
+			{"valid JWT 0", jwt0, kid0.String()},
+			{"valid JWT 1", jwt1, kid1.String()},
 		}
 		for _, tt := range statictests {
 			s.Run(tt.name, func() {
@@ -200,8 +210,8 @@ func (s *TestKeyManagerSuite) TestKeyFetching() {
 			jwt  string
 			kid  string
 		}{
-			{"valid JWT 0", jwt0, kid1},
-			{"valid JWT 1", jwt1, kid0},
+			{"valid JWT 0", jwt0, kid1.String()},
+			{"valid JWT 1", jwt1, kid0.String()},
 		}
 		for _, tt := range statictests {
 			s.Run(tt.name, func() {
@@ -253,6 +263,7 @@ func (s *TestKeyManagerSuite) TestE2EKeyFetching() {
 	s.Run("fail to retrieve e2e keys for prod environment", func() {
 		resetFunc := commontest.SetEnvVarAndRestore(s.T(), key, "prod")
 		defer resetFunc()
+		fake.MockSSOCertsCall(s.T())
 		config := configuration.New()
 
 		checkE2EKeysNotFound(config)
@@ -261,6 +272,7 @@ func (s *TestKeyManagerSuite) TestE2EKeyFetching() {
 	s.Run("fail to retrieve e2e keys if environment is not set", func() {
 		resetFunc := commontest.UnsetEnvVarAndRestore(s.T(), key)
 		defer resetFunc()
+		fake.MockSSOCertsCall(s.T())
 		config := configuration.New()
 
 		checkE2EKeysNotFound(config)
