@@ -8,8 +8,8 @@ on:
 jobs:
   test:
     name: Test
-    uses: codeready-toolchain/devcluster/.github/workflows/test.yml
+    uses: codeready-toolchain/devcluster/.github/workflows/test.yaml@master
 
   deploy:
     name: Deploy
-    uses: codeready-toolchain/devcluster/.github/workflows/deploy.yml
+    uses: codeready-toolchain/devcluster/.github/workflows/deploy.yaml@master

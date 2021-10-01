@@ -6,4 +6,4 @@ on:
 
 jobs:
   call-workflow:
-    uses: codeready-toolchain/devcluster/.github/workflows/test.yml
+    uses: codeready-toolchain/devcluster/.github/workflows/test.yaml@master
