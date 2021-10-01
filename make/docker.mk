@@ -8,12 +8,12 @@ IMAGE_DEV ?= ${TARGET_REGISTRY}/${QUAY_NAMESPACE}/${GO_PACKAGE_REPO_NAME}:${TIME
 .PHONY: docker-image
 ## Build the docker image locally that can be deployed (only contains bare operator)
 docker-image: build
-	$(Q)docker build -f build/Dockerfile -t ${IMAGE} .
+	$(Q)podman build -f build/Dockerfile -t ${IMAGE} .
 
 .PHONY: docker-image-dev
 ## Build the docker image locally that can be deployed to dev environment
 docker-image-dev: build
-	$(Q)docker build -f build/Dockerfile -t ${IMAGE_DEV} .
+	$(Q)podman build -f build/Dockerfile -t ${IMAGE_DEV} .
 
 
 .PHONY: docker-push-dev
@@ -24,7 +24,7 @@ ifeq ($(QUAY_NAMESPACE),${GO_PACKAGE_ORG_NAME})
 	@echo you are going to push to $(QUAY_NAMESPACE) namespace, make sure you have set QUAY_NAMESPACE variable appropriately
 	@echo "#################################################################################################################"
 endif
-	$(Q)docker push ${IMAGE_DEV}
+	$(Q)podman push ${IMAGE_DEV}
 
 .PHONY: docker-push
 ## Push the docker image to quay.io registry
@@ -34,7 +34,7 @@ ifeq ($(QUAY_NAMESPACE),${GO_PACKAGE_ORG_NAME})
 	@echo you are going to push to $(QUAY_NAMESPACE) namespace, make sure you have set QUAY_NAMESPACE variable appropriately
 	@echo "#################################################################################################################"
 endif
-	$(Q)docker push ${IMAGE}
+	$(Q)podman push ${IMAGE}
 
 .PHONY: docker-push-to-local
 ## Push the docker image to the local docker.io registry
@@ -56,4 +56,4 @@ set-os-registry:
 
 .PHONY: docker-login
 docker-login:
-	@echo "${DOCKER_PASSWORD}" | docker login quay.io -u "${QUAY_USERNAME}" --password-stdin
+	@echo "${DOCKER_PASSWORD}" | podman login quay.io -u "${QUAY_USERNAME}" --password-stdin

@@ -88,7 +88,7 @@ Before running VSCode from that shell.
 
 === Deploying on OpenShift
 
-To deploy the service on OpenShift you need to have OpenShift cluster running and access to a docker registry.
+To deploy the service on OpenShift you need to have OpenShift cluster running and access to a image registry.
 Before running any make target, make sure you have `QUAY_NAMESPACE` variable set to your quay username (or set to any namespace you want to push the image to).
 
 ```bash
@@ -104,34 +104,10 @@ Then:
 
 * Make sure the target OpenShift cluster is accessible via `oc` command.
 * Log in to the target OpenShift cluster with with a user who has edit permissions in `$NAMESPACE` or has permissions to create `$NAMESPACE`
-* Login to quay.io via `docker login quay.io` (in case you want to use quay as the docker registry)
+* Login to quay.io via `podman login quay.io` (in case you want to use quay as the image registry)
 
 Then run:
 ```bash
 make deploy
 ```
 
-=== Deploying on minishift
-
-To deploy DevCluster Service on local minishift, start your minishift then run:
-
-```bash
-eval $(minishift docker-env)
-make deploy-on-minishift
-```
-
-The service can be accessed via the corresponding route:
-```bash
-$ oc get routes devcluster
-
-NAME                   HOST/PORT                                         PATH      SERVICES               PORT      TERMINATION   WILDCARD
-devcluster   devcluster-devcluster.192.168.42.237.nip.io             devcluster    8080                   None
-```
-
-You can now open the URL from HOST/PORT in your browser:
-
-http://devcluster-devcluster.192.168.42.237.nip.io
-
-_Note_: the actual route/URL will be different in your minishift.
-
-NOTE: If running in Minishift `eval $(minishift docker-env)` and `eval $(minishift oc-env)` are required. If running in CodeReady Containers `eval $(crc oc-env)` is required.
