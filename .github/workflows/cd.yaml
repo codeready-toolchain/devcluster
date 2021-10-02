@@ -12,4 +12,5 @@ jobs:
 
   deploy:
     name: Deploy
+    needs: test
     uses: codeready-toolchain/devcluster/.github/workflows/deploy.yaml@master
