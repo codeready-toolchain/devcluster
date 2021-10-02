@@ -1,7 +1,14 @@
 name: Deploy
 
 on:
-  workflow_call: 
+  workflow_call:
+    secrets:
+      quay_token:
+        required: true
+      openshift_server:
+        required: true
+      openshift_token:
+        required: true
 
 env:
   GOPATH: /tmp/go
@@ -52,17 +59,27 @@ jobs:
           && sudo apt-get -y install podman dbus-x11 \
           && podman version
 
-    - name: Login to quay.io
+    - name: Login to quay
       shell: bash
       run: |
-        podman login -u="${{ env.QUAY_NAMESPACE }}" -p="${{ secrets.QUAY_TOKEN }}" quay.io
+        set -e
+        mkdir -p  ~/.docker || true
+        echo "{
+                      \"auths\": {
+                              \"quay.io\": {
+                                      \"auth\": \"${{ secrets.quay_token }}\"
+                              }
+                      }
+              }"> ~/.docker/config.json
+
+        podman login quay.io  --authfile=~/.docker/config.json
 
     - name: Login to cluster
       uses: redhat-actions/oc-login@v1
 
       with:
-        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
-        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        openshift_server_url: ${{ secrets.openshift_server }}
+        openshift_token: ${{ secrets.openshift_token }}
         namespace: ${{ env.NAMESPACE }}
 
     - name: Build & Deploy

@@ -14,3 +14,7 @@ jobs:
     name: Deploy
     needs: test
     uses: codeready-toolchain/devcluster/.github/workflows/deploy.yaml@master
+    secrets:
+      quay_token: ${{ secrets.QUAY_TOKEN }}
+      openshift_server: ${{ secrets.OPENSHIFT_SERVER }}
+      openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}

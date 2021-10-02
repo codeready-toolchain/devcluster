@@ -2,7 +2,9 @@
 
 image:https://goreportcard.com/badge/github.com/codeready-toolchain/devcluster[Go Report Card, link="https://goreportcard.com/report/github.com/codeready-toolchain/devcluster"]
 image:https://godoc.org/github.com/codeready-toolchain/devcluster?status.png[GoDoc,link="https://godoc.org/github.com/codeready-toolchain/devcluster"]
-image:https://github.com/codeready-toolchain/devcluster/workflows/Go/badge.svg?branch=master[Go,link="https://github.com/codeready-toolchain/devcluster/actions?query=workflow%3AGo"]
+image:https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml/badge.svg[CD,link="https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml"]
+
+[![CD](https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml/badge.svg)](https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml)
 
 This is the DevCluster Service repository
 
