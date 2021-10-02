@@ -1,16 +1,7 @@
-MINISHIFT_IP?=$(shell minishift ip)
-MINISHIFT_HOSTNAME=minishift.local
-MINISHIFT_HOSTNAME_REGEX='minishift\.local'
 ETC_HOSTS=/etc/hosts
 
 APP_NAMESPACE ?= $(NAMESPACE)
 NAMESPACE ?= "devcluster"
-
-.PHONY: login-as-admin
-## Log in as system:admin
-login-as-admin:
-	$(Q)-echo "Logging using system:admin..."
-	$(Q)-oc login -u system:admin
 
 .PHONY: create-namespace
 ## Create the test namespace
@@ -22,7 +13,7 @@ create-namespace:
 
 .PHONY: use-namespace
 ## Log in as system:admin and enter the test namespace
-use-namespace: login-as-admin
+use-namespace:
 	$(Q)-echo "Using to the namespace $(NAMESPACE)"
 	$(Q)-oc project $(NAMESPACE)
 
@@ -34,11 +25,7 @@ clean-namespace:
 
 .PHONY: reset-namespace
 ## Delete an create the test namespace and deploy rbac there
-reset-namespace: login-as-admin clean-namespace create-namespace
-
-.PHONY: deploy-on-minishift
-## Deploy DevCluster service on minishift
-deploy-on-minishift: login-as-admin create-namespace build docker-image-dev apply-resources print-route
+reset-namespace: clean-namespace create-namespace
 
 .PHONY: deploy
 ## Deploy DevCluster
