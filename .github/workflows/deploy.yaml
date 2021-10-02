@@ -17,8 +17,8 @@ env:
   QUAY_NAMESPACE: codeready-toolchain
 
 jobs:
-  binary:
-    name: Install operators to Dev Sandbox
+  build-deploy:
+    name: Build Image & Deploy
 
     runs-on: ubuntu-latest
 

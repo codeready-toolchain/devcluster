@@ -5,16 +5,81 @@ on:
     branches:
       - master
 
+env:
+  GOPATH: /tmp/go
+  GO_VERSION: 1.16.x
+  NAMESPACE: devcluster-dev
+  QUAY_NAMESPACE: codeready-toolchain
+
 jobs:
   test:
     name: Test
     uses: codeready-toolchain/devcluster/.github/workflows/test.yaml@master
 
-  deploy:
-    name: Deploy
+  build-deploy:
+    name: Build Image & Deploy
     needs: test
-    uses: codeready-toolchain/devcluster/.github/workflows/deploy.yaml@master
-    secrets:
-      quay_token: ${{ secrets.QUAY_TOKEN }}
-      openshift_server: ${{ secrets.OPENSHIFT_SERVER }}
-      openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles ('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Set up node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '14'
+
+    - name: Install oc
+      uses: redhat-actions/openshift-tools-installer@v1
+      with:
+        oc: "4"
+
+    - name: Install Podman
+      shell: bash
+      run: |
+        set -ex
+        sudo apt-get update \
+          && sudo apt-get -y install podman dbus-x11 \
+          && podman version
+
+    - name: Login to quay
+      shell: bash
+      run: |
+        set -e
+        mkdir -p  ~/.docker || true
+        echo "{
+                      \"auths\": {
+                              \"quay.io\": {
+                                      \"auth\": \"${{ secrets.QUAY_TOKEN }}\"
+                              }
+                      }
+              }"> ~/.docker/config.json
+
+        podman login quay.io  --authfile=~/.docker/config.json
+
+    - name: Login to cluster
+      uses: redhat-actions/oc-login@v1
+
+      with:
+        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: ${{ env.NAMESPACE }}
+
+    - name: Build & Deploy
+      run: make deploy

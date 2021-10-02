@@ -4,8 +4,6 @@ image:https://goreportcard.com/badge/github.com/codeready-toolchain/devcluster[G
 image:https://godoc.org/github.com/codeready-toolchain/devcluster?status.png[GoDoc,link="https://godoc.org/github.com/codeready-toolchain/devcluster"]
 image:https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml/badge.svg[CD,link="https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml"]
 
-[![CD](https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml/badge.svg)](https://github.com/codeready-toolchain/devcluster/actions/workflows/cd.yaml)
-
 This is the DevCluster Service repository
 
 == Build
