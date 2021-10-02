@@ -52,20 +52,10 @@ jobs:
           && sudo apt-get -y install podman dbus-x11 \
           && podman version
 
-    - name: Login to quay
+    - name: Login to quay.io
       shell: bash
       run: |
-        set -e
-        mkdir -p  ~/.docker || true
-        echo "{
-                      \"auths\": {
-                              \"quay.io\": {
-                                      \"auth\": \"${{ secrets.QUAY_TOKEN }}\"
-                              }
-                      }
-              }"> ~/.docker/config.json
-
-        podman login quay.io  --authfile=~/.docker/config.json
+        podman login -u="${{ env.QUAY_NAMESPACE }}" -p="${{ secrets.QUAY_TOKEN }}" quay.io
 
     - name: Login to cluster
       uses: redhat-actions/oc-login@v1
